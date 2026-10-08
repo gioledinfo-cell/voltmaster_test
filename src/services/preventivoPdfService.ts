@@ -296,63 +296,114 @@ export function generatePreventivoPdf(
   y += 4;
 
   // 6. Totali Economici & Breakdown IVA
-  if (y > 220) {
+  if (y > 210) {
     doc.addPage();
     y = 20;
   }
 
-  const totalsBoxW = 80;
+  const totalsBoxW = 90;
   const totalsBoxX = margin + contentWidth - totalsBoxW;
-  const totalsBoxH = 28;
+  const hasDiscount = (preventivo.percentualeScontoMaggiorazione || 0) > 0;
+  const totalsBoxH = hasDiscount ? 38 : 34;
+
+  const subMat = preventivo.subtotaleMateriali ?? preventivo.voci.filter(v => v.categoria === 'materiale').reduce((a, b) => a + b.totale, 0);
+  const subMan = preventivo.subtotaleManodopera ?? preventivo.voci.filter(v => v.categoria === 'manodopera' || v.categoria === 'pratica_tecnica').reduce((a, b) => a + b.totale, 0);
+  const impNetto = preventivo.totaleImponibile ?? preventivo.imponibile;
+  const aliqIva = preventivo.aliquotaIva ?? preventivo.ivaPercentuale ?? 22;
+  const totIvato = preventivo.totaleIvato ?? preventivo.totale;
 
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(226, 232, 240);
   doc.roundedRect(totalsBoxX, y, totalsBoxW, totalsBoxH, 1.5, 1.5, 'FD');
 
+  let rowY = y + 5;
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
+  doc.setFontSize(7.2);
   doc.setTextColor(71, 85, 105);
-  doc.text('Totale Imponibile:', totalsBoxX + 4, y + 6);
+  doc.text('Totale Materiali (con ricarico):', totalsBoxX + 4, rowY);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(15, 23, 42);
   doc.text(
-    `€ ${preventivo.imponibile.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    `€ ${subMat.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
     totalsBoxX + totalsBoxW - 4,
-    y + 6,
+    rowY,
     { align: 'right' }
   );
 
+  rowY += 4.5;
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(71, 85, 105);
-  doc.text(`IVA di Legge (${preventivo.ivaPercentuale}%):`, totalsBoxX + 4, y + 12);
+  doc.text('Totale Manodopera & Servizi:', totalsBoxX + 4, rowY);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(15, 23, 42);
+  doc.text(
+    `€ ${subMan.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    totalsBoxX + totalsBoxW - 4,
+    rowY,
+    { align: 'right' }
+  );
+
+  if (hasDiscount) {
+    rowY += 4.5;
+    const isSconto = preventivo.tipoAggiustamento !== 'maggiorazione';
+    const discAmount = preventivo.quotaScontoMaggiorazione || ((subMat + subMan) * preventivo.percentualeScontoMaggiorazione / 100);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(225, 29, 72); // rose-600
+    doc.text(`${isSconto ? 'Sconto commerciale' : 'Maggiorazione'} (${preventivo.percentualeScontoMaggiorazione}%):`, totalsBoxX + 4, rowY);
+    doc.setFont('helvetica', 'bold');
+    doc.text(
+      `${isSconto ? '-' : '+'}€ ${discAmount.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      totalsBoxX + totalsBoxW - 4,
+      rowY,
+      { align: 'right' }
+    );
+  }
+
+  rowY += 4.5;
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 41, 59);
+  doc.text('Imponibile Netto:', totalsBoxX + 4, rowY);
+  doc.text(
+    `€ ${impNetto.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    totalsBoxX + totalsBoxW - 4,
+    rowY,
+    { align: 'right' }
+  );
+
+  rowY += 4.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Quota IVA (${aliqIva}%):`, totalsBoxX + 4, rowY);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(15, 23, 42);
   doc.text(
     `€ ${preventivo.ivaImporto.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
     totalsBoxX + totalsBoxW - 4,
-    y + 12,
+    rowY,
     { align: 'right' }
   );
 
   // Line before grand total
+  rowY += 3;
   doc.setDrawColor(203, 213, 225);
-  doc.line(totalsBoxX + 3, y + 16, totalsBoxX + totalsBoxW - 3, y + 16);
+  doc.line(totalsBoxX + 3, rowY, totalsBoxX + totalsBoxW - 3, rowY);
 
   // Highlighted Grand Total
+  rowY += 2;
   doc.setFillColor(254, 243, 199); // amber-100
-  doc.roundedRect(totalsBoxX + 2, y + 18, totalsBoxW - 4, 8, 1, 1, 'F');
+  doc.roundedRect(totalsBoxX + 2, rowY, totalsBoxW - 4, 7.5, 1, 1, 'F');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(146, 64, 14); // amber-800
-  doc.text('TOTALE PREVENTIVO:', totalsBoxX + 4, y + 23.5);
+  doc.text('TOTALE PREVENTIVO:', totalsBoxX + 4, rowY + 5);
 
-  doc.setFontSize(10.5);
+  doc.setFontSize(10);
   doc.setTextColor(180, 83, 9); // amber-700
   doc.text(
-    `€ ${preventivo.totale.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    `€ ${totIvato.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
     totalsBoxX + totalsBoxW - 4,
-    y + 23.5,
+    rowY + 5,
     { align: 'right' }
   );
 

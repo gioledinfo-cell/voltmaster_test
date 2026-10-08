@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { X, ZoomIn, Download, ExternalLink, ShieldCheck, Tag, Info } from 'lucide-react';
+import { resolveStorageUrlSync } from '../../services/cloudStorageService';
 
 export interface PhotoLightboxData {
   imageUrl: string;
@@ -62,7 +63,7 @@ export const PhotoLightboxModal: React.FC<PhotoLightboxModalProps> = ({ data, on
         {/* High-res Image Viewing Area */}
         <div className="relative flex-1 bg-slate-950 flex items-center justify-center p-2 min-h-[300px] sm:min-h-[380px] overflow-hidden">
           <img
-            src={data.imageUrl}
+            src={resolveStorageUrlSync(data.imageUrl)}
             alt={data.title}
             className="max-h-[55vh] w-auto max-w-full object-contain rounded-lg shadow-lg select-none"
             loading="eager"
@@ -84,7 +85,7 @@ export const PhotoLightboxModal: React.FC<PhotoLightboxModalProps> = ({ data, on
             </div>
 
             <a
-              href={data.imageUrl}
+              href={resolveStorageUrlSync(data.imageUrl)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-semibold transition-colors shrink-0"

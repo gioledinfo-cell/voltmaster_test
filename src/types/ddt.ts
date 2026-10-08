@@ -74,6 +74,7 @@ export interface DocumentoDiTrasporto {
   // Dettaglio Merci
   righe: RigaDDT[];
   annotazioni?: string;
+  noteTrasporto?: string;
   
   // Firme grafometriche & ricezione
   firmaMittente?: string;           // Data URL PNG

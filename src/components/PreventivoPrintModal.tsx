@@ -317,15 +317,44 @@ export const PreventivoPrintModal: React.FC<PreventivoPrintModalProps> = ({
 
               {/* Totali Economici (5 cols) */}
               <div className="sm:col-span-5 p-3.5 bg-slate-100 rounded-xl border border-slate-300 flex flex-col justify-between">
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-xs text-slate-600">
-                    <span>Imponibile Totale:</span>
-                    <span className="font-mono font-semibold text-slate-900">
-                      € {preventivo.imponibile.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <div className="space-y-1.5 text-xs">
+                  {/* Subtotale Materiali */}
+                  <div className="flex justify-between items-center text-slate-600">
+                    <span>Totale Materiali (con ricarico):</span>
+                    <span className="font-mono font-medium text-slate-900">
+                      € {(preventivo.subtotaleMateriali ?? preventivo.voci.filter(v => v.categoria === 'materiale').reduce((a, b) => a + b.totale, 0)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center text-xs text-slate-600">
-                    <span>IVA di Legge ({preventivo.ivaPercentuale}%):</span>
+
+                  {/* Subtotale Manodopera */}
+                  <div className="flex justify-between items-center text-slate-600">
+                    <span>Totale Manodopera & Servizi:</span>
+                    <span className="font-mono font-medium text-slate-900">
+                      € {(preventivo.subtotaleManodopera ?? preventivo.voci.filter(v => v.categoria === 'manodopera' || v.categoria === 'pratica_tecnica').reduce((a, b) => a + b.totale, 0)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+
+                  {/* Sconto o Maggiorazione se presente */}
+                  {preventivo.percentualeScontoMaggiorazione > 0 && (
+                    <div className="flex justify-between items-center text-[11px] font-semibold text-rose-700">
+                      <span>
+                        {preventivo.tipoAggiustamento === 'sconto' ? 'Sconto commerciale' : 'Maggiorazione'} ({preventivo.percentualeScontoMaggiorazione}%):
+                      </span>
+                      <span className="font-mono">
+                        {preventivo.tipoAggiustamento === 'sconto' ? '-' : '+'}€ {(preventivo.quotaScontoMaggiorazione || ((preventivo.imponibile * preventivo.percentualeScontoMaggiorazione) / 100)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center pt-1.5 border-t border-slate-300 font-bold text-slate-900">
+                    <span>Imponibile Netto:</span>
+                    <span className="font-mono">
+                      € {(preventivo.totaleImponibile ?? preventivo.imponibile).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-slate-600">
+                    <span>IVA di Legge ({preventivo.aliquotaIva ?? preventivo.ivaPercentuale}%):</span>
                     <span className="font-mono font-semibold text-slate-900">
                       € {preventivo.ivaImporto.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
@@ -335,14 +364,14 @@ export const PreventivoPrintModal: React.FC<PreventivoPrintModalProps> = ({
                 <div className="pt-2 border-t border-slate-300 mt-2">
                   <div className="p-2 bg-amber-100 border border-amber-300 rounded-lg flex justify-between items-center">
                     <span className="text-xs font-bold text-amber-950 uppercase">
-                      Totale Preventivo:
+                      Totale Preventivo Finale:
                     </span>
                     <span className="text-sm font-black font-mono text-amber-900">
-                      € {preventivo.totale.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      € {(preventivo.totaleIvato ?? preventivo.totale).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                   <span className="text-[9px] text-slate-500 block text-right mt-1">
-                    IVA {preventivo.ivaPercentuale}% inclusa
+                    IVA {preventivo.aliquotaIva ?? preventivo.ivaPercentuale}% inclusa
                   </span>
                 </div>
               </div>

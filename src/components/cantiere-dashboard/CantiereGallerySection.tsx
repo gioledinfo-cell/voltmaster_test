@@ -16,6 +16,10 @@ import { CantiereFotoAllegato } from '../../types/cantiereDashboard';
 import { useFilePreview } from '../../context/FilePreviewContext';
 import { PreviewableFile } from '../../types/preview';
 import { compressImageFile, CompressionResult } from '../../utils/imageCompressor';
+import {
+  uploadFileToStorage,
+  resolveStorageUrlSync,
+} from '../../services/cloudStorageService';
 
 interface CantiereGallerySectionProps {
   foto: CantiereFotoAllegato[];
@@ -52,8 +56,14 @@ export const CantiereGallerySection: React.FC<CantiereGallerySectionProps> = ({
         quality: 0.82,
         format: 'image/webp',
       });
+      // Salva nel Cloud Storage / Blob Store per evitare saturazione di memoria
+      const stored = await uploadFileToStorage(result.blob, {
+        folder: 'cantiere_gallery',
+        fileName: file.name,
+        mimeType: result.mimeType,
+      });
       setCompressionMetrics(result);
-      setPhotoDataUrl(result.dataUrl);
+      setPhotoDataUrl(stored.storageUri || stored.url);
       if (!titolo) {
         setTitolo(file.name.replace(/\.[^/.]+$/, ''));
       }
@@ -144,29 +154,33 @@ export const CantiereGallerySection: React.FC<CantiereGallerySectionProps> = ({
           </div>
         ) : (
           filtered.map((item) => {
+            const resolvedPhotoUrl = resolveStorageUrlSync(item.url);
             const previewFile: PreviewableFile = {
               id: item.id,
               nome: `${item.titolo}.jpg`,
               tipo: 'jpg',
               dimensioneKb: item.dimensioneKb || 1800,
-              url: item.url,
-              thumbnailUrl: item.url,
+              url: resolvedPhotoUrl,
+              thumbnailUrl: resolvedPhotoUrl,
               dataCaricamento: item.data,
               autore: item.caricatoDa,
               categoria: 'foto',
             };
 
-            const allPreviewFiles: PreviewableFile[] = filtered.map((f) => ({
-              id: f.id,
-              nome: `${f.titolo}.jpg`,
-              tipo: 'jpg',
-              dimensioneKb: f.dimensioneKb || 1800,
-              url: f.url,
-              thumbnailUrl: f.url,
-              dataCaricamento: f.data,
-              autore: f.caricatoDa,
-              categoria: 'foto',
-            }));
+            const allPreviewFiles: PreviewableFile[] = filtered.map((f) => {
+              const resUrl = resolveStorageUrlSync(f.url);
+              return {
+                id: f.id,
+                nome: `${f.titolo}.jpg`,
+                tipo: 'jpg',
+                dimensioneKb: f.dimensioneKb || 1800,
+                url: resUrl,
+                thumbnailUrl: resUrl,
+                dataCaricamento: f.data,
+                autore: f.caricatoDa,
+                categoria: 'foto',
+              };
+            });
 
             return (
               <div
@@ -176,7 +190,7 @@ export const CantiereGallerySection: React.FC<CantiereGallerySectionProps> = ({
               >
                 <div className="aspect-video w-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative">
                   <img
-                    src={item.url}
+                    src={resolvedPhotoUrl}
                     alt={item.titolo}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"

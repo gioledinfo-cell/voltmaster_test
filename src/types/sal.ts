@@ -126,6 +126,11 @@ export interface StatoAvanzamentoLavori {
   congruitaManodopera?: CalcoloCongruitaManodopera; // Calcolo D.M. 143/2021
   isSalFinale?: boolean; // Contrassegna se è il SAL di saldo prima della fatturazione finale
   attestazioneEdilconnect?: AttestazioneEdilconnect; // Certificato CNCE Edilconnect rilasciato
+  ritenutaGaranziaPercentuale?: number;
+  ritenutaGaranziaImporto?: number;
+  aliquotaIvaPercentuale?: number;
+  note?: string;
+  vociLibrettoMisure?: any[];
   redattoDa: string;
   approvatoDirettoreLavori?: {
     nome: string;

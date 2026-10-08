@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import {
   User,
   AppInterfaceMode,
@@ -68,6 +68,13 @@ import {
   OfflineCacheMetadata,
 } from '../services/offlineCacheService';
 import { generateUniqueId } from '../utils/idGenerator';
+import { CantiereContext, CantiereContextType, useCantiere } from './CantiereContext';
+import { LogisticaContext, LogisticaContextType, useLogistica } from './LogisticaContext';
+import { ContabilitaContext, ContabilitaContextType, useContabilita } from './ContabilitaContext';
+
+export { useCantiere } from './CantiereContext';
+export { useLogistica } from './LogisticaContext';
+export { useContabilita } from './ContabilitaContext';
 
 export type NavigationTab =
   | 'dashboard'
@@ -141,6 +148,8 @@ interface AppContextType {
   updateListinoFornitore: (items: ArticoloListinoFornitore[]) => void;
 
   // Mutators
+  addCliente: (c: Omit<Cliente, 'id'>) => Cliente;
+  updateCliente: (id: string, updates: Partial<Cliente>) => void;
   addCantiere: (c: Omit<Cantiere, 'id'>) => Cantiere;
   updateCantiere: (id: string, updates: Partial<Cantiere>) => void;
   
@@ -168,6 +177,7 @@ interface AppContextType {
   addVeicolo: (v: Omit<Veicolo, 'id'>) => Veicolo;
   setVeicoliList: (list: Veicolo[]) => void;
   addRifornimento: (r: Omit<RifornimentoRecord, 'id'>) => RifornimentoRecord;
+  addDeposito: (dep: Omit<DepositoRecord, 'id'>) => DepositoRecord;
 
   addDocumento: (doc: Omit<DocumentoTecnico, 'id'>) => DocumentoTecnico;
   addSegnalazione: (seg: Omit<SegnalazioneCliente, 'id'>) => SegnalazioneCliente;
@@ -220,6 +230,8 @@ interface AppContextType {
   updateDdt: (id: string, updates: Partial<DocumentoDiTrasporto>) => void;
   deleteDdt: (id: string) => void;
   confermaConsegnaDdt: (id: string, nomeRicevente?: string, firmaDestinatario?: string) => void;
+  annullaDdt: (id: string, motivo: string) => void;
+  scaricaDdtInMagazzino: (ddtId: string) => void;
 
   // Modulo Richieste Materiali & Attrezzature Cantiere
   richiesteMateriali: RichiestaMateriali[];
@@ -313,6 +325,16 @@ function loadFromStorage<T>(key: string, defaultValue: T): T {
   }
 }
 
+function saveToStorageSafe<T>(key: string, value: T): boolean {
+  try {
+    localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+    return true;
+  } catch (e) {
+    console.warn(`[Storage] Non è stato possibile salvare '${key}' in localStorage (Quota ecceduta o limite memoria):`, e);
+    return false;
+  }
+}
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser: authUser } = useAuth();
 
@@ -383,7 +405,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateListinoFornitore = (items: ArticoloListinoFornitore[]) => {
     setListinoFornitore(items);
-    localStorage.setItem(STORAGE_PREFIX + 'listino_rematarlazzi_v1', JSON.stringify(items));
+    saveToStorageSafe('listino_rematarlazzi_v1', items);
   };
   const [presenze, setPresenze] = useState<PresenzaCantiere[]>(() => loadFromStorage('presenze', INITIAL_PRESENZE));
   const [sals, setSals] = useState<StatoAvanzamentoLavori[]>(() => loadFromStorage('sals', INITIAL_SALS));
@@ -490,37 +512,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         presenze,
       });
 
-      localStorage.setItem(STORAGE_PREFIX + 'clienti', JSON.stringify(clienti));
-      localStorage.setItem(STORAGE_PREFIX + 'cantieri', JSON.stringify(cantieri));
-      localStorage.setItem(STORAGE_PREFIX + 'cantieri_v2', JSON.stringify(cantieri));
-      localStorage.setItem(STORAGE_PREFIX + 'preventivi', JSON.stringify(preventivi));
-      localStorage.setItem(STORAGE_PREFIX + 'lavorazioni', JSON.stringify(lavorazioni));
-      localStorage.setItem(STORAGE_PREFIX + 'rols', JSON.stringify(rols));
-      localStorage.setItem(STORAGE_PREFIX + 'dipendenti', JSON.stringify(dipendenti));
-      localStorage.setItem(STORAGE_PREFIX + 'dipendenti_v2', JSON.stringify(dipendenti));
-      localStorage.setItem(STORAGE_PREFIX + 'magazzino', JSON.stringify(magazzino));
-      localStorage.setItem(STORAGE_PREFIX + 'magazzino_v3', JSON.stringify(magazzino));
-      localStorage.setItem(STORAGE_PREFIX + 'movimenti', JSON.stringify(movimenti));
-      localStorage.setItem(STORAGE_PREFIX + 'attrezzature', JSON.stringify(attrezzature));
-      localStorage.setItem(STORAGE_PREFIX + 'attrezzature_v2', JSON.stringify(attrezzature));
-      localStorage.setItem(STORAGE_PREFIX + 'veicoli', JSON.stringify(veicoli));
-      localStorage.setItem(STORAGE_PREFIX + 'veicoli_v2', JSON.stringify(veicoli));
-      localStorage.setItem(STORAGE_PREFIX + 'depositi', JSON.stringify(depositi));
-      localStorage.setItem(STORAGE_PREFIX + 'depositi_v2', JSON.stringify(depositi));
-      localStorage.setItem(STORAGE_PREFIX + 'rifornimenti', JSON.stringify(rifornimenti));
-      localStorage.setItem(STORAGE_PREFIX + 'rifornimenti_v2', JSON.stringify(rifornimenti));
-      localStorage.setItem(STORAGE_PREFIX + 'documenti', JSON.stringify(documenti));
-      localStorage.setItem(STORAGE_PREFIX + 'segnalazioni', JSON.stringify(segnalazioni));
-      localStorage.setItem(STORAGE_PREFIX + 'ordini_interni', JSON.stringify(ordiniInterni));
-      localStorage.setItem(STORAGE_PREFIX + 'fornitori', JSON.stringify(fornitori));
-      localStorage.setItem(STORAGE_PREFIX + 'presenze', JSON.stringify(presenze));
-      localStorage.setItem(STORAGE_PREFIX + 'sals', JSON.stringify(sals));
-      localStorage.setItem(STORAGE_PREFIX + 'scadenze', JSON.stringify(scadenze));
-      localStorage.setItem(STORAGE_PREFIX + 'notifiche', JSON.stringify(notifiche));
-      localStorage.setItem(STORAGE_PREFIX + 'ddts', JSON.stringify(ddts));
-      localStorage.setItem(STORAGE_PREFIX + 'richieste_materiali_v1', JSON.stringify(richiesteMateriali));
-      localStorage.setItem(STORAGE_PREFIX + 'pacchi_zona_verde_v1', JSON.stringify(pacchiZonaVerde));
-      localStorage.setItem(STORAGE_PREFIX + 'current_user', JSON.stringify(currentUser));
+      saveToStorageSafe('clienti', clienti);
+      saveToStorageSafe('cantieri', cantieri);
+      saveToStorageSafe('cantieri_v2', cantieri);
+      saveToStorageSafe('preventivi', preventivi);
+      saveToStorageSafe('lavorazioni', lavorazioni);
+      saveToStorageSafe('rols', rols);
+      saveToStorageSafe('dipendenti', dipendenti);
+      saveToStorageSafe('dipendenti_v2', dipendenti);
+      saveToStorageSafe('magazzino', magazzino);
+      saveToStorageSafe('magazzino_v3', magazzino);
+      saveToStorageSafe('movimenti', movimenti);
+      saveToStorageSafe('attrezzature', attrezzature);
+      saveToStorageSafe('attrezzature_v2', attrezzature);
+      saveToStorageSafe('veicoli', veicoli);
+      saveToStorageSafe('veicoli_v2', veicoli);
+      saveToStorageSafe('depositi', depositi);
+      saveToStorageSafe('depositi_v2', depositi);
+      saveToStorageSafe('rifornimenti', rifornimenti);
+      saveToStorageSafe('rifornimenti_v2', rifornimenti);
+      saveToStorageSafe('documenti', documenti);
+      saveToStorageSafe('segnalazioni', segnalazioni);
+      saveToStorageSafe('ordini_interni', ordiniInterni);
+      saveToStorageSafe('fornitori', fornitori);
+      saveToStorageSafe('presenze', presenze);
+      saveToStorageSafe('sals', sals);
+      saveToStorageSafe('scadenze', scadenze);
+      saveToStorageSafe('notifiche', notifiche);
+      saveToStorageSafe('ddts', ddts);
+      saveToStorageSafe('richieste_materiali_v1', richiesteMateriali);
+      saveToStorageSafe('pacchi_zona_verde_v1', pacchiZonaVerde);
+      saveToStorageSafe('current_user', currentUser);
     } catch (e) {
       console.error('Storage save error:', e);
     }
@@ -536,7 +558,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const setInterfaceMode = (mode: AppInterfaceMode) => {
     setInterfaceModeState(mode);
-    localStorage.setItem(STORAGE_PREFIX + 'interface_mode', JSON.stringify(mode));
+    saveToStorageSafe('interface_mode', mode);
     
     // Auto-switch default user / tab for this mode
     if (mode === 'contabilita') {
@@ -590,6 +612,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const setActiveTab = (tab: NavigationTab) => {
     setActiveTabState(tab);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const addCliente = (data: Omit<Cliente, 'id'>) => {
+    const newId = generateUniqueId('cli');
+    const newCliente: Cliente = { ...data, id: newId };
+    setClienti((prev) => [newCliente, ...prev]);
+    showToast(`Cliente ${newCliente.ragioneSociale} registrato con successo!`, 'success');
+    return newCliente;
+  };
+
+  const updateCliente = (id: string, updates: Partial<Cliente>) => {
+    setClienti((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, ...updates } : c))
+    );
+    showToast('Anagrafica cliente aggiornata.', 'info');
   };
 
   const addCantiere = (data: Omit<Cantiere, 'id'>) => {
@@ -947,6 +984,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     showToast(`Rifornimento ${newRif.quantitaLitri}L registrato per ${newRif.targa}!`, 'success');
     return newRif;
+  };
+
+  const addDeposito = (depData: Omit<DepositoRecord, 'id'>): DepositoRecord => {
+    const newId = `dep-${Date.now()}`;
+    const newDep: DepositoRecord = {
+      ...depData,
+      id: newId,
+    };
+    setDepositi((prev) => [newDep, ...prev]);
+    showToast('Deposito carburante/materiale registrato con successo!', 'success');
+    return newDep;
   };
 
   const addDocumento = (doc: Omit<DocumentoTecnico, 'id'>) => {
@@ -1769,6 +1817,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(`Consegna DDT registrata con successo a cantiere!`, 'success');
   };
 
+  const annullaDdt = (id: string, motivo: string) => {
+    setDdts((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, stato: 'annullato' as StatoDDT, noteTrasporto: `${d.noteTrasporto || ''} [Annullato: ${motivo}]` } : d))
+    );
+    showToast(`DDT contrassegnato come annullato (${motivo}).`, 'warning');
+  };
+
+  const scaricaDdtInMagazzino = (ddtId: string) => {
+    const ddt = ddts.find((d) => d.id === ddtId);
+    if (!ddt) return;
+    ddt.righe.forEach((riga) => {
+      if (riga.articoloId) {
+        const item = magazzino.find((m) => m.id === riga.articoloId);
+        if (item) {
+          updateArticoloMagazzino(riga.articoloId, {
+            giacenza: Math.max(0, item.giacenza - riga.quantita),
+          });
+          addMovimento({
+            articoloId: riga.articoloId,
+            articoloNome: item.nome,
+            tipo: 'scarico_cantiere',
+            quantita: riga.quantita,
+            cantiereId: ddt.cantiereId,
+            cantiereNome: ddt.cantiereNome,
+            data: new Date().toISOString().split('T')[0],
+            operatoreNome: currentUser.name,
+            documentoRif: ddt.numeroDdt,
+          });
+        }
+      }
+    });
+    setDdts((prev) =>
+      prev.map((d) => (d.id === ddtId ? { ...d, scaricaMagazzino: true } : d))
+    );
+    showToast(`Giacenze scaricate per il DDT ${ddt.numeroDdt}`, 'success');
+  };
+
   // Modulo Richieste Materiali & Attrezzature Cantiere
   const addRichiestaMateriali = (data: Omit<RichiestaMateriali, 'id' | 'numero' | 'notifica'>): RichiestaMateriali => {
     const year = new Date().getFullYear();
@@ -2027,6 +2112,133 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('Tutti i dati sono stati ripristinati alle condizioni di fabbrica.', 'info');
   };
 
+  const cantiereContextValue: CantiereContextType = useMemo(
+    () => ({
+      cantieri,
+      selectedCantiereId,
+      setSelectedCantiereId,
+      rols,
+      lavorazioni,
+      dipendenti,
+      presenze,
+      documenti,
+      segnalazioni,
+      scadenze,
+      addCantiere,
+      updateCantiere,
+      addROL,
+      updateROL,
+      approveROL,
+      rejectROL,
+      addLavorazione,
+      updateLavorazione,
+      addDocumento,
+      addSegnalazione,
+      updateSegnalazione,
+      addPresenza,
+      updatePresenza,
+      deletePresenza,
+      timbraturaRapidaSquadra,
+      approvaPresenza,
+      addScadenza,
+      updateScadenza,
+      deleteScadenza,
+      rinnovaScadenza,
+    }),
+    [
+      cantieri,
+      selectedCantiereId,
+      rols,
+      lavorazioni,
+      dipendenti,
+      presenze,
+      documenti,
+      segnalazioni,
+      scadenze,
+    ]
+  );
+
+  const logisticaContextValue: LogisticaContextType = useMemo(
+    () => ({
+      magazzino,
+      movimenti,
+      addArticoloMagazzino,
+      addArticoliMagazzinoBatch,
+      updateArticoloMagazzino,
+      addMovimento,
+      listinoFornitore,
+      updateListinoFornitore,
+      attrezzature,
+      veicoli,
+      depositi,
+      rifornimenti,
+      addAttrezzatura,
+      updateAttrezzatura,
+      addVeicolo,
+      updateVeicolo,
+      setVeicoliList,
+      addRifornimento,
+      addDeposito,
+      pacchiZonaVerde,
+      addPaccoZonaVerde,
+      updatePaccoZonaVerde,
+      richiesteMateriali,
+      addRichiestaMateriali,
+      updateRichiestaMateriali,
+    }),
+    [
+      magazzino,
+      movimenti,
+      listinoFornitore,
+      attrezzature,
+      veicoli,
+      depositi,
+      rifornimenti,
+      pacchiZonaVerde,
+      richiesteMateriali,
+    ]
+  );
+
+  const contabilitaContextValue: ContabilitaContextType = useMemo(
+    () => ({
+      clienti,
+      preventivi,
+      addCliente,
+      updateCliente,
+      addPreventivo,
+      updatePreventivo,
+      convertPreventivoToCantiere,
+      sals,
+      addSal,
+      updateSal,
+      deleteSal,
+      approvaSalDL,
+      emettiCertificatoPagamento,
+      liquidaSal,
+      ddts,
+      addDdt,
+      updateDdt,
+      annullaDdt,
+      scaricaDdtInMagazzino,
+      ordiniInterni,
+      fornitori,
+      addOrdineInterno,
+      updateOrdineInterno,
+      deleteOrdineInterno,
+      transizioneStatoOrdine,
+      duplicaOrdineInterno,
+      addCommentoOrdine,
+    }),
+    [
+      clienti,
+      preventivi,
+      sals,
+      ddts,
+      ordiniInterni,
+      fornitori,
+    ]
+  );
+
   return (
     <AppContext.Provider
       value={{
@@ -2048,6 +2260,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         veicoli,
         depositi,
         rifornimenti,
+        addDeposito,
         documenti,
         segnalazioni,
         ordiniInterni,
@@ -2060,6 +2273,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         notifiche,
         addCantiere,
         updateCantiere,
+        addCliente,
+        updateCliente,
         addPreventivo,
         updatePreventivo,
         convertPreventivoToCantiere,
@@ -2114,6 +2329,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateDdt,
         deleteDdt,
         confermaConsegnaDdt,
+        annullaDdt,
+        scaricaDdtInMagazzino,
         pacchiZonaVerde,
         addPaccoZonaVerde,
         updatePaccoZonaVerde,
@@ -2156,7 +2373,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         dismissToast,
       }}
     >
-      {children}
+      <CantiereContext.Provider value={cantiereContextValue}>
+        <LogisticaContext.Provider value={logisticaContextValue}>
+          <ContabilitaContext.Provider value={contabilitaContextValue}>
+            {children}
+          </ContabilitaContext.Provider>
+        </LogisticaContext.Provider>
+      </CantiereContext.Provider>
     </AppContext.Provider>
   );
 };

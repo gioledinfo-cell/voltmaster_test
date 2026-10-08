@@ -43,6 +43,7 @@ import {
   ShieldAlert,
   KeyRound,
   FileCode,
+  Copy,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ROL, ROLStato, ROLCollaboratore, ROLWorkType, TravelDetails } from '../types';
@@ -55,6 +56,10 @@ import { FatturaElettronicaModal } from './fatturazione/FatturaElettronicaModal'
 import { PhotoLightboxModal, PhotoLightboxData } from './preview/PhotoLightboxModal';
 import { downloadRolPdf, shareRolPdf } from '../services/rolPdfService';
 import { compressImageFile } from '../utils/imageCompressor';
+import {
+  uploadFileToStorage,
+  resolveStorageUrlSync,
+} from '../services/cloudStorageService';
 import {
   generateRolDigitalSeal,
   verifyRolIntegrity,
@@ -281,6 +286,94 @@ export const ROLModule: React.FC = () => {
   const activeCantiereForForm = cantieri.find((c) => c.id === formData.cantiereId) || cantieri[0];
   const cantiereLavorazioni = lavorazioni.filter((l) => l.cantiereId === formData.cantiereId);
 
+  // Quick Copy from Previous / Yesterday ROL (Passo 1 UX Cantiere)
+  const populateFormFromRol = (sourceRol: ROL) => {
+    const cantiere = cantieri.find((c) => c.id === sourceRol.cantiereId);
+    setFormData({
+      cantiereId: sourceRol.cantiereId,
+      lavorazioneId: sourceRol.lavorazioneId || '',
+      attivitaLibera: sourceRol.attivitaLibera || '',
+      oreOrdinarie: sourceRol.oreOrdinarie || 8,
+      oreStraordinarie: 0, // Azzera straordinari per la nuova giornata
+      descrizioneLavori: sourceRol.descrizioneLavori || '',
+      noteOperatore: sourceRol.noteOperatore || '',
+      materialeNome: '',
+      materialeQta: 1,
+    });
+
+    setFormWorkType(sourceRol.workType || 'cantiere');
+    setFormSubActivity(
+      sourceRol.subActivity ||
+        (sourceRol.workType === 'officina' ? 'cablaggio_qeg_prese' : 'posa_cavi_canali')
+    );
+    setFormActivityDescription(sourceRol.activityDescription || '');
+    setFormPartsReplaced(sourceRol.partsReplaced || '');
+    setFormPhotos([]); // Foto fresche per oggi
+
+    // Clona squadra collaboratori mantenendo ore standard
+    if (sourceRol.collaboratori && sourceRol.collaboratori.length > 0) {
+      setCollaboratoriAggiunti(
+        sourceRol.collaboratori.map((c) => ({
+          ...c,
+          oreStraordinarie: 0,
+        }))
+      );
+    } else {
+      setCollaboratoriAggiunti([]);
+    }
+
+    // Clona dettagli trasferta e veicolo se configurati
+    if (sourceRol.travelDetails?.hasTravel) {
+      setFormHasTravel(true);
+      setFormHoursTravel(sourceRol.travelDetails.travelHours || 1);
+      setFormTravelRoute(sourceRol.travelDetails.route || 'Sede VoltMaster -> Cantiere');
+      setFormTravelVehicleId(sourceRol.travelDetails.vehicleId || veicoli[0]?.id || '');
+      setFormTravelCustomVehicle(sourceRol.travelDetails.customVehicleName || '');
+      setFormTravelKm(sourceRol.travelDetails.km || 25);
+    } else {
+      setFormHasTravel(false);
+    }
+
+    // Clona materiali ricorrenti
+    const sourceMats = sourceRol.materiali || sourceRol.materialiUtilizzati || [];
+    if (sourceMats.length > 0) {
+      setMaterialiAggiunti(
+        sourceMats.map((m: { nome: string; quantita: number; unita?: string }) => ({
+          nome: m.nome,
+          quantita: m.quantita,
+          unita: m.unita || 'pz',
+        }))
+      );
+    } else {
+      setMaterialiAggiunti([]);
+    }
+
+    setIsNewModalOpen(true);
+    const countDip = (sourceRol.collaboratori?.length || 0) + 1;
+    showToast(
+      `Dati clonati dal ROL del ${sourceRol.data} (${cantiere?.titolo || 'Cantiere'}: ${countDip} operai, veicolo ${sourceRol.travelDetails?.vehicleId ? 'impostato' : 'nessuno'})!`,
+      'success'
+    );
+  };
+
+  const handleQuickCopyYesterdayRol = () => {
+    if (rols.length === 0) {
+      showToast('Nessun ROL precedente disponibile da copiare.', 'warning');
+      return;
+    }
+
+    const preferredCantiereId = formData.cantiereId || selectedRol?.cantiereId || cantieri[0]?.id;
+    const sameCantiereRols = rols.filter((r) => r.cantiereId === preferredCantiereId);
+    const sortedList = [...(sameCantiereRols.length > 0 ? sameCantiereRols : rols)].sort(
+      (a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()
+    );
+
+    const source = sortedList[0];
+    if (source) {
+      populateFormFromRol(source);
+    }
+  };
+
   const handleAddMaterialeRow = () => {
     if (!formData.materialeNome) return;
     setMaterialiAggiunti((prev) => [
@@ -379,8 +472,17 @@ export const ROLModule: React.FC = () => {
           quality: 0.78,
           format: 'image/jpeg',
         });
-        setFormPhotos((prev) => [...prev, compressed.dataUrl]);
-        showToast(`Foto compressa (-${compressed.reductionPercentage}%) e aggiunta al rapporto!`, 'success');
+        // Archivia nel Blob Store / Cloud Storage anziché in Base64
+        const stored = await uploadFileToStorage(compressed.blob, {
+          folder: 'rol_foto',
+          fileName: file.name,
+          mimeType: compressed.mimeType,
+        });
+        setFormPhotos((prev) => [...prev, stored.storageUri || stored.url]);
+        showToast(
+          `Foto archiviata su Cloud Storage (-${compressed.reductionPercentage}%)!`,
+          'success'
+        );
       } catch (err) {
         console.error('Errore compressione foto:', err);
       }
@@ -554,6 +656,16 @@ export const ROLModule: React.FC = () => {
           >
             <FileCode className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
             <span>Fattura Elettronica XML</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleQuickCopyYesterdayRol}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 dark:text-amber-300 border border-amber-300 dark:border-amber-700/80 text-xs font-bold rounded-lg transition-colors shadow-xs cursor-pointer"
+            title="Copia l'ultimo ROL del cantiere o di ieri: precompila operai, ore, mezzi e lavorazioni con 1 solo tocco"
+          >
+            <Copy className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span>Copia da ROL di Ieri</span>
           </button>
 
           <button
@@ -811,6 +923,15 @@ export const ROLModule: React.FC = () => {
                   </button>
 
                   <button
+                    onClick={() => populateFormFromRol(selectedRol)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 dark:text-amber-300 dark:border-amber-700 text-xs font-bold rounded-lg transition-colors shadow-xs"
+                    title="Clona questo rapporto in un nuovo ROL per la giornata odierna (stessa squadra, mezzi e cantiere)"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>Duplica per Oggi</span>
+                  </button>
+
+                  <button
                     onClick={() => {
                       setSelectedFatturaRol(selectedRol);
                       setIsFatturaModalOpen(true);
@@ -994,34 +1115,37 @@ export const ROLModule: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {selectedRol.photos.map((photoUrl, idx) => (
-                      <div
-                        key={idx}
-                        onClick={() =>
-                          setLightboxData({
-                            imageUrl: photoUrl,
-                            title: `Foto ${idx + 1} · ${selectedRol.numero}`,
-                            category: selectedRol.workType || 'intervento',
-                            subtitle: selectedRol.activityDescription || selectedRol.cantiereTitolo,
-                            details: [
-                              { label: 'Cantiere', value: selectedRol.cantiereTitolo },
-                              { label: 'Tecnico', value: selectedRol.operatoreNome },
-                              { label: 'Data', value: selectedRol.data },
-                            ],
-                          })
-                        }
-                        className="group relative aspect-video rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 cursor-pointer shadow-xs hover:border-amber-500 transition-all"
-                      >
-                        <img
-                          src={photoUrl}
-                          alt={`Foto intervento ${idx + 1}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                          <Eye className="w-5 h-5" />
+                    {selectedRol.photos.map((photoUrl, idx) => {
+                      const resolvedUrl = resolveStorageUrlSync(photoUrl);
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() =>
+                            setLightboxData({
+                              imageUrl: resolvedUrl,
+                              title: `Foto ${idx + 1} · ${selectedRol.numero}`,
+                              category: selectedRol.workType || 'intervento',
+                              subtitle: selectedRol.activityDescription || selectedRol.cantiereTitolo,
+                              details: [
+                                { label: 'Cantiere', value: selectedRol.cantiereTitolo },
+                                { label: 'Tecnico', value: selectedRol.operatoreNome },
+                                { label: 'Data', value: selectedRol.data },
+                              ],
+                            })
+                          }
+                          className="group relative aspect-video rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 cursor-pointer shadow-xs hover:border-amber-500 transition-all"
+                        >
+                          <img
+                            src={resolvedUrl}
+                            alt={`Foto intervento ${idx + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                            <Eye className="w-5 h-5" />
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1355,6 +1479,54 @@ export const ROLModule: React.FC = () => {
             </div>
 
             <form onSubmit={handleCreateROL} className="space-y-4 text-xs mt-4">
+              {/* BANNER CLONAZIONE RAPIDA DA ROL DI IERI / PRECEDENTE */}
+              {rols.length > 0 && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                    <div>
+                      <span className="font-bold text-xs text-amber-950 dark:text-amber-200">
+                        ⚡ Precompila da ROL Precedente:
+                      </span>
+                      <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80">
+                        Clona squadra operai, ore standard, veicolo e attività con 1 solo click.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                    <select
+                      onChange={(e) => {
+                        const found = rols.find((r) => r.id === e.target.value);
+                        if (found) populateFormFromRol(found);
+                      }}
+                      defaultValue=""
+                      className="text-[11px] px-2 py-1.5 bg-white dark:bg-slate-900 border border-amber-400/60 dark:border-amber-700/80 rounded-lg text-slate-800 dark:text-slate-200 font-medium w-full sm:w-auto"
+                    >
+                      <option value="" disabled>
+                        -- Scegli ROL da clonare --
+                      </option>
+                      {rols.slice(0, 10).map((r) => {
+                        const cant = cantieri.find((c) => c.id === r.cantiereId);
+                        const techCount = (r.collaboratori?.length || 0) + 1;
+                        return (
+                          <option key={r.id} value={r.id}>
+                            {r.data} - [{r.numero}] {cant?.titolo ? cant.titolo.slice(0, 18) : 'Cantiere'} ({techCount} op.)
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={handleQuickCopyYesterdayRol}
+                      className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-[11px] shrink-0 transition-colors shadow-xs"
+                      title="Clona l'ultimo ROL di questo cantiere o di ieri"
+                    >
+                      Clona Ieri
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Cantiere / Commessa */}
               <div>
                 <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
@@ -1691,7 +1863,7 @@ export const ROLModule: React.FC = () => {
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-1">
                     {formPhotos.map((photo, idx) => (
                       <div key={idx} className="relative aspect-video rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 group">
-                        <img src={photo} alt={`Foto ${idx}`} className="w-full h-full object-cover" />
+                        <img src={resolveStorageUrlSync(photo)} alt={`Foto ${idx}`} className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={() => handleRemovePhoto(idx)}

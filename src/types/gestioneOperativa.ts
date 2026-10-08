@@ -64,6 +64,7 @@ export interface AttrezzaturaRecord {
 }
 
 export interface DepositoRecord {
+  id?: string;                    // ID (PK opzionale)
   titolo: string;                 // Titolo (PK / Nome deposito)
   tecnoCodice: string;            // Tecno_Codice
   tipologia: string;              // Tipologia (Centrale Sede, Hub, Mobile Furgone, Container Cantiere)

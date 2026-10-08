@@ -70,6 +70,10 @@ import {
 } from '../services/offlineCacheService';
 import { compressImageFile, formatFileSize } from '../utils/imageCompressor';
 import {
+  uploadFileToStorage,
+  resolveStorageUrlSync,
+} from '../services/cloudStorageService';
+import {
   detectActiveCantiereByGeofence,
   GeofenceDetectionResult,
   SIMULATED_GPS_LOCATIONS,
@@ -369,7 +373,14 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
         });
         totalOrig += result.originalSize;
         totalComp += result.compressedSize;
-        newCompressedPhotos.push(result.dataUrl);
+
+        // Archivia nel Blob Store / Cloud Storage per preservare memoria
+        const stored = await uploadFileToStorage(result.blob, {
+          folder: 'campo_mobile',
+          fileName: file.name,
+          mimeType: result.mimeType,
+        });
+        newCompressedPhotos.push(stored.storageUri || stored.url);
       }
 
       setPhotos((prev) => [...prev, ...newCompressedPhotos]);
@@ -1426,9 +1437,9 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
               <div className="flex gap-2 overflow-x-auto pt-1">
                 {photos.map((p, idx) => (
                   <div key={idx} className="relative w-16 h-12 rounded overflow-hidden shrink-0 border border-slate-400 group">
-                    <img src={p} alt={`Foto ${idx}`} className="w-full h-full object-cover" />
+                    <img src={resolveStorageUrlSync(p)} alt={`Foto ${idx}`} className="w-full h-full object-cover" />
                     <span className="absolute bottom-0 inset-x-0 bg-slate-900/80 text-[8px] text-emerald-400 text-center font-mono font-bold">
-                      ⚡ COMPRESSA
+                      ⚡ CLOUD
                     </span>
                     <button
                       type="button"

@@ -109,6 +109,28 @@ export interface Cantiere {
 
 export type PreventivoStato = 'bozza' | 'inviato' | 'accettato' | 'rifiutato' | 'scaduto';
 
+export interface VoceMaterialePreventivo {
+  id: string;
+  articoloId?: string; // id opzionale da catalogo magazzino
+  codiceSku?: string;
+  descrizione: string;
+  unitaMisura: string;
+  quantita: number;
+  costoAcquistoUnitario: number;
+  ricaricoPercentuale?: number; // % ricarico specifico riga (opzionale)
+  prezzoVenditaUnitario: number; // calcolato: costo * (1 + ricarico/100)
+  totaleCosto: number; // quantita * costoAcquistoUnitario
+  totaleVendita: number; // quantita * prezzoVenditaUnitario
+}
+
+export interface VoceManodoperaPreventivo {
+  id: string;
+  descrizione: string;
+  oreStimate: number;
+  tariffaOrariaApplicata: number; // €/h applicata
+  totale: number; // oreStimate * tariffaOrariaApplicata
+}
+
 export interface VocePreventivo {
   id: string;
   descrizione: string;
@@ -117,6 +139,8 @@ export interface VocePreventivo {
   unitaMisura: string;
   prezzoUnitario: number;
   totale: number;
+  costoAcquistoUnitario?: number;
+  ricaricoPercentuale?: number;
 }
 
 export interface Preventivo {
@@ -129,10 +153,28 @@ export interface Preventivo {
   dataScadenza: string;
   stato: PreventivoStato;
   voci: VocePreventivo[];
-  imponibile: number;
-  ivaPercentuale: number;
-  ivaImporto: number;
-  totale: number;
+  
+  // Dati di calcolo economico modulare
+  materiali?: VoceMaterialePreventivo[];
+  manodopera?: VoceManodoperaPreventivo[];
+  tariffaOraria: number; // default es. 35.00 €/ora
+  percentualeRicaricoMateriali: number; // default globale es. 30%
+  tipoAggiustamento?: 'sconto' | 'maggiorazione'; // toggle sconto (-) o maggiorazione (+)
+  percentualeScontoMaggiorazione: number; // valore % (es. 5%)
+  aliquotaIva: number; // % IVA (22, 10, 4, 0...)
+  
+  subtotaleMaterialiCosto?: number;
+  subtotaleMateriali: number; // Prezzo complessivo vendita materiali
+  subtotaleManodopera: number; // Totale Ore * Tariffa Oraria
+  totaleLavorazioni?: number; // subtotaleMateriali + subtotaleManodopera
+  quotaScontoMaggiorazione?: number; // importo dello sconto o maggiorazione
+  totaleImponibile: number; // imponibile netto dopo sconto/maggiorazione
+  imponibile: number; // alias retro-compatibile con totaleImponibile
+  ivaPercentuale: number; // alias retro-compatibile con aliquotaIva
+  ivaImporto: number; // Quota IVA
+  totaleIvato: number; // TOTALE PREVENTIVO FINALE (IVA inclusa)
+  totale: number; // alias retro-compatibile con totaleIvato
+  
   note: string;
   cantiereIdCreato?: string; // se convertito in cantiere
 }
@@ -160,9 +202,12 @@ export type ROLStato = 'bozza' | 'inviato' | 'approvato' | 'respinto';
 export type ROLWorkType = 'cantiere' | 'officina' | 'manutenzione_riparazione';
 
 export interface TravelDetails {
+  hasTravel?: boolean;
+  travelHours?: number;
   vehicleId?: string;
   vehiclePlate?: string;
   vehicleName?: string;
+  customVehicleName?: string;
   route: string;
   km?: number;
 }
@@ -218,6 +263,13 @@ export interface ROL {
   photos?: string[]; // Foto dell'intervento o componente sostituito
 
   descrizioneLavori: string;
+  materiali?: {
+    nome: string;
+    quantita: number;
+    unita?: string;
+    prezzoUnitario?: number;
+    codiceArticolo?: string;
+  }[];
   materialiUtilizzati?: {
     nome: string;
     quantita: number;
@@ -591,3 +643,4 @@ export * from './richiestaMateriali';
 export * from './zonaVerde';
 export * from './sicurezzaCantiere';
 export type { ArticoloListinoFornitore } from '../data/listinoFornitore';
+export type { FornitoreAnagrafica } from '../data/mockOrdini';

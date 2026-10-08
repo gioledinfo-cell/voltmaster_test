@@ -23,13 +23,15 @@ import {
   Award,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { AppInterfaceMode } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { NetworkStatusIndicator } from './NetworkStatusIndicator';
 import { NotificheDropdown } from './scadenziario/NotificheDropdown';
 import { ThemeToggle } from './ThemeToggle';
 import { SwitchUserModal } from './SwitchUserModal';
 import { PWAInstallButton } from './common/PWAInstallButton';
-import { AppInterfaceMode } from '../types';
+import { CommandPaletteModal } from './common/CommandPaletteModal';
+import { Search } from 'lucide-react';
 
 interface HeaderProps {
   onToggleMobileSidebar: () => void;
@@ -65,6 +67,19 @@ export const Header: React.FC<HeaderProps> = ({
   const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isSwitchUserModalOpen, setIsSwitchUserModalOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Global Shortcut CMD+K / CTRL+K
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleLogout = () => {
     setIsProfileDropdownOpen(false);
@@ -154,7 +169,7 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </a>
 
-        {/* Organigramma & 20 Dipendenti button (hidden on smartphones under 640px to prevent crowding) */}
+        {/* Organigramma & 20 Dipendenti button */}
         <button
           onClick={onOpenOrganigramma}
           className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-[36px] rounded-lg bg-slate-100 hover:bg-slate-200/80 text-slate-700 hover:text-amber-600 dark:bg-slate-800/80 dark:hover:bg-slate-800 dark:text-slate-300 dark:hover:text-amber-400 text-xs font-semibold border border-slate-200 dark:border-slate-700/80 transition-colors"
@@ -163,6 +178,19 @@ export const Header: React.FC<HeaderProps> = ({
           <Users className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
           <span className="hidden md:inline">Organigramma (20 Dip. · 20+ Clienti)</span>
           <span className="md:hidden">20 Dip.</span>
+        </button>
+
+        {/* Command Palette CMD+K trigger */}
+        <button
+          onClick={() => setIsCommandPaletteOpen(true)}
+          className="inline-flex items-center gap-2 px-3 py-1.5 min-h-[36px] bg-slate-100 hover:bg-slate-200/90 dark:bg-slate-800/90 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold transition-all shadow-2xs cursor-pointer"
+          title="Cerca rapida con scorciatoia tastiera CMD+K o CTRL+K"
+        >
+          <Search className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+          <span className="hidden lg:inline text-slate-500 dark:text-slate-400">Cerca...</span>
+          <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded text-amber-600 dark:text-amber-400 shadow-2xs">
+            ⌘K
+          </kbd>
         </button>
       </div>
 
@@ -449,6 +477,16 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Switch User Modal */}
       {isSwitchUserModalOpen && (
         <SwitchUserModal onClose={() => setIsSwitchUserModalOpen(false)} />
+      )}
+
+      {/* Command Palette CMD+K Modal */}
+      {isCommandPaletteOpen && (
+        <CommandPaletteModal
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          onOpenOrganigramma={onOpenOrganigramma}
+          onOpenFlussoCantiere={onOpenFlussoCantiere}
+        />
       )}
     </header>
   );
