@@ -1,0 +1,8 @@
+{
+  "name": "Remix VoltMaster - Gestionale Impianti Elettrici",
+  "description": "Web app multi-piattaforma per la gestione completa di cantieri elettrici, preventivi, ROL con firma grafometrica, magazzino, attrezzature e tracciabilità QR code.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

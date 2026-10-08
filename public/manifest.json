@@ -1,0 +1,32 @@
+{
+  "id": "/",
+  "short_name": "VoltMaster",
+  "name": "VoltMaster - ERP Cantieri & Logistica",
+  "description": "Gestionale integrato per cantieri elettrici, ROL con firma digitale, SAL, DDT e inventario flotta.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#f59e0b",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}

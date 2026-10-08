@@ -1,0 +1,532 @@
+================================================================================
+          AZIENDA IMPIANTI ELETTRICI - SCHEMI A BLOCCHI DEI RUOLI & WORKFLOW
+                      Documento Operativo Ufficiale e Organigramma
+                               Versione 3.0 - Anno 2026
+================================================================================
+
+INDICE DEL DOCUMENTO:
+  1. SCHEMA A BLOCCHI GERARCHICO GENERALE (Governance & Reporting Aziendale)
+  2. SCHEMI A BLOCCHI FUNZIONALI PER RUOLO (Input -> Processo -> Output -> Squadra)
+     2.1 Direzione Generale & Amministratore Unico
+     2.2 Amministrazione & Controllo di Gestione (3 Addetti)
+     2.3 Ufficio Tecnico & Project Management (4 Addetti)
+     2.4 Capocantiere Elettrico Preposto PES/PAV/PEI (4 Addetti)
+     2.5 Operaio Specializzato Elettricista PES/PAV (4 Addetti)
+     2.6 Apprendista Elettricista in Formazione (5 Addetti)
+     2.7 Committente, Direzione Lavori (D.L.) & Cliente Finale (20+ Clienti)
+  3. SCHEMI A BLOCCHI DEI WORKFLOW OPERATIVI INTEGRATI
+     3.1 Ciclo di Vita ROL (Ore Lavoro, Viaggio/Trasferta, Manutenzioni & Ricambi)
+     3.2 Workflow DDT & Logistica Furgoni (D.P.R. 472/96 -> Scarico Magazzino)
+     3.3 Workflow SAL & Verifica Congruità Manodopera (D.M. 143/2021 CNCE/Edilconnect)
+     3.4 Workflow Controllo di Gestione & Margine di Commessa Reale (EAC & Variance)
+     3.5 Workflow Presenze & Timesheet Cantiere (D.Lgs 81/08)
+  4. MATRICE DELLE RESPONSABILITÀ AGGIORNATA (RACI MATRIX INTEGRATA)
+  5. NORMATIVE TECNICHE, ABILITAZIONI E CONFORMITÀ DI LEGGE
+  6. ARCHITETTURA DELLE 4 MACRO-AREE E INTERFACCE SOFTWARE
+     6.1 Riorganizzazione UX della Sidebar in 4 Cartelle Tematiche
+     6.2 Le 4 Interfacce Operative Multi-Dispositivo
+
+================================================================================
+1. SCHEMA A BLOCCHI GERARCHICO GENERALE (GOVERNANCE & REPORTING)
+================================================================================
+
++------------------------------------------------------------------------------+
+|                         DIREZIONE GENERALE                                   |
+|                      (Amministratore Unico)                                  |
+|  * Strategia aziendale & Gare        * Contratti quadro e appalti pubblici   |
+|  * Approvazione SAL finali           * Nomina formale Preposti di Cantiere   |
+|  * Cruscotto Redditività & EBITDA    * Supervisione Congruità D.M. 143/2021  |
++---------------------------------------+--------------------------------------+
+                                        |
+                    +-------------------+-------------------+
+                    |                                       |
+                    v                                       v
++---------------------------------------+ +------------------------------------+
+|     AMMINISTRAZIONE & CONTABILITÀ     | |        UFFICIO TECNICO & PM        |
+|             (3 Addetti)               | |            (4 Addetti)             |
+|  * Controllo Gestione ROL/DDT/SAL     | |  * Progettazione DM 37/08          |
+|  * Verifica Congruità Manodopera CNCE | |  * Preventivazione e computi       |
+|  * Validazione ROL per paghe/ore      | |  * Emissione schemi CEI 64-8       |
+|  * Gestione DDT D.P.R. 472/96         | |  * Pianificazione cantieri/fasi    |
+|  * Fatturazione elettronica SAL / SDI | |  * Gestione Ordini & Magazzino QR  |
+|  * Scadenzario DURC/Patentini/Mezzi   | |  * Monitoraggio SAL & Libretti     |
++-------------------+-------------------+ +------------------+-----------------+
+                    |                                        |
+                    +-------------------+--------------------+
+                                        |
+                                        | (Assegnazione cantieri, DDT & commesse)
+                                        v
++------------------------------------------------------------------------------+
+|                         CANTIERE & CAMPO (13 Tecnici)                        |
+|                                                                              |
+|   +----------------------------------------------------------------------+   |
+|   |          4 CAPI CANTIERE (Preposti Sicurezza - PES / PAV / PEI)      |   |
+|   |  * Scansione QR Cantiere & GPS     * Coordinamento operativo squadra |   |
+|   |  * Timbratura Timesheet D.Lgs81    * Ricezione & Firma DDT Vettore   |   |
+|   |  * Compilazione ROL (Lavoro+Viaggio)* Scheda Riparazioni & Ricambi   |   |
+|   |  * Raccolta firma touch cliente    * Galleria Foto As-Built cantiere |   |
+|   +-----------------------------------+----------------------------------+   |
+|                                       |                                      |
+|   +-----------------------------------v----------------------------------+   |
+|   |          4 OPERAI SPECIALIZZATI (Cablatori & Installatori PES/PAV)   |   |
+|   |  * Esecuzione a regola d'arte      * Cablaggio quadri BT / Inverter  |   |
+|   |  * Infilaggio dorsali e posa       * Diagnosi guasti & Riparazioni   |   |
+|   |  * Timbratura presenze squadra     * Ore accreditate nel ROL squadra |   |
+|   +-----------------------------------+----------------------------------+   |
+|                                       |                                      |
+|   +-----------------------------------v----------------------------------+   |
+|   |          5 APPRENDISTI ELETTRICISTI (In Formazione & Supporto)       |   |
+|   |  * Posa canalizzazioni e tubi      * Supporto infilaggio cavi        |   |
+|   |  * Gestione materiali scaricati    * Riordino furgone e attrezzi     |   |
+|   |  * Timbratura orari formativi      * Ore registrate nel ROL squadra  |   |
+|   +----------------------------------------------------------------------+   |
++---------------------------------------+--------------------------------------+
+                                        |
+                                        | (Firma touch display / SAL / Report PDF)
+                                        v
++------------------------------------------------------------------------------+
+|                 COMMITTENTI, DIREZIONE LAVORI & CLIENTI (20+ Attivi)         |
+|  * Approvazione preventivi con 1-click       * Firma touch ROL a fine turno  |
+|  * Approvazione Libretti Misure SAL          * Rilascio Certificati Pagamento|
+|  * Verifica Congruità CNCE Cassa Edile       * Download DiCo 37/08 e Foto    |
++------------------------------------------------------------------------------+
+
+================================================================================
+2. SCHEMI A BLOCCHI FUNZIONALI PER RUOLO
+================================================================================
+
+Ogni ruolo aziendale opera secondo il modello standard a 4 blocchi:
+[INPUT & TRIGGER] -> [PROCESSO & COMPETENZE] -> [OUTPUT & CONSEGNABILI] -> [SQUADRA]
+
+--------------------------------------------------------------------------------
+2.1 DIREZIONE GENERALE & AMMINISTRATORE UNICO (1 Figura)
+--------------------------------------------------------------------------------
+[INPUT]
+  - Cruscotto di Controllo di Gestione & Margine di Commessa Reale (EAC)
+  - Prospetto Verifica Congruità della Manodopera D.M. 143/2021
+  - Preventivi complessi, gare d'appalto e contratti quadro
+  - Audit Scadenziario (DURC, CEI 11-27, visite mediche, revisioni flotta)
+[PROCESSO & COMPETENZE]
+  - Analisi marginalità commesse (Ricavi SAL vs Consuntivo ROL/DDT)
+  - Nomina formale Preposti di Cantiere e deleghe sicurezza D.Lgs 81/08
+  - Autorizzazione investimenti in attrezzature, automezzi e assunzioni
+  - Validazione liquidazioni SAL e saldo contratti d'appalto
+[OUTPUT]
+  - Budget previsionali e piani commerciali
+  - Contratti d'appalto firmati e delibere operative
+  - Approvazione bilanci di commessa e chiusure contabili
+[SQUADRA & RELAZIONI]
+  - Coordina: Responsabili Contabilità, Ufficio Tecnico e Capicantiere
+  - Risponde a: Assemblea dei Soci / Proprietà
+  - Collabora con: Istituti bancari, Cassa Edile / CNCE, Consulenti del Lavoro
+
+--------------------------------------------------------------------------------
+2.2 AMMINISTRAZIONE & CONTROLLO DI GESTIONE (3 Addetti)
+--------------------------------------------------------------------------------
+[INPUT]
+  - ROL con dettaglio ore ordinarie, straordinarie, viaggio e ricambi
+  - DDT di trasporto merci pervenuti dai fornitori o emessi per i cantieri
+  - SAL emessi con certificati di pagamento e libretti delle misure
+  - Budget preventivo articolato per macro-voci di spesa
+[PROCESSO & COMPETENZE]
+  - Verifica automatica Congruità Manodopera D.M. 143/2021 su ogni SAL
+  - Controllo incrociato a 4 vie: Costo Manodopera (ROL) + Costo Materiali (DDT)
+    + Oneri/Spese Generali vs Ricavi Maturati (SAL)
+  - Quadratura monte ore dipendenti per consulente del lavoro (Paghe)
+  - Emissione fatture elettroniche XML SDI collegate ai certificati SAL
+  - Monitoraggio Scadenziario a Semaforo (DURC, patenti, tarature)
+[OUTPUT]
+  - ROL validati e approvati (bloccati) per elaborazione stipendi
+  - Report di Controllo di Gestione & Marginalità Reale Commessa
+  - Attestazioni di Congruità Manodopera per la Cassa Edile (CNCE)
+  - Fatture elettroniche SDI di acconto, SAL e saldo
+[SQUADRA & RELAZIONI]
+  - Coordina: Gestione amministrativa acquisti e scadenze aziendali
+  - Risponde a: Amministratore Unico
+  - Collabora con: Project Manager (quadratura SAL) e Capicantiere (verifiche ROL/DDT)
+
+--------------------------------------------------------------------------------
+2.3 UFFICIO TECNICO & PROJECT MANAGEMENT (4 Addetti)
+--------------------------------------------------------------------------------
+[INPUT]
+  - Capitolati d'appalto, richieste di offerta, planimetrie e schemi unifilari
+  - Rilievi di campo, foto as-built e checklist collaudo strumentale
+  - Stato giacenze magazzino centrale, ordini interni e disponibilità flotta
+[PROCESSO & COMPETENZE]
+  - Redazione computi metrici e preventivi dettagliati con margine atteso
+  - Apertura cantieri a sistema con codice univoco e QR Code
+  - Pianificazione cronoprogramma lavorazioni, assegnazione veicoli e strumenti
+  - Redazione libretti misure SAL e rendicontazione avanzamento
+  - Compilazione fascicolo tecnico DiCo DM 37/08 con relazioni e schemi CEI
+  - Emissione DDT di cantiere per invio materiali e attrezzature
+[OUTPUT]
+  - Preventivi PDF professionali computati per i committenti
+  - SAL completi di libretto misure inviati alla Direzione Lavori
+  - DDT di trasporto (D.P.R. 472/96) e ordini fornitori
+  - Fascicolo DiCo 37/08 completo di allegati obbligatori
+[SQUADRA & RELAZIONI]
+  - Coordina: Capi Cantiere, Magazzinieri e Fornitori
+  - Risponde a: Amministratore Unico
+  - Collabora con: Contabilità (marginalità SAL) e Direzione Lavori committente
+
+--------------------------------------------------------------------------------
+2.4 CAPOCANTIERE ELETTRICO PREPOSTO (4 Addetti: PES / PAV / PEI)
+--------------------------------------------------------------------------------
+[INPUT]
+  - Cronoprogramma lavorazioni e squadra operativa assegnata dal PM
+  - Furgone allestito con materiali da DDT e attrezzature tarate
+  - Schemi elettrici CEI 64-8 e disposizioni del Piano Operativo di Sicurezza (POS)
+[PROCESSO & COMPETENZE]
+  - Scansione QR Cantiere all'arrivo e timbratura rapida presenze squadra (D.Lgs 81)
+  - Briefing sicurezza giornaliero e controllo DPI di III categoria
+  - Direzione operativa posa cavi, montaggio quadri, canaline e impianti FV
+  - Ricezione DDT in cantiere con verifica colli e apposizione firma destinatario
+  - Compilazione ROL giornaliero:
+    * Ore lavoro (ordinarie/straordinarie) per ogni membro squadra
+    * Gestione ore di viaggio e trasferta con selezione veicolo e percorso
+    * Selezione macro-categoria (Cantiere, Officina, Manutenzione)
+    * Dettaglio interventi, ricambi sostituiti e foto documentali
+  - Esecuzione verifiche strumentali (continuità PE, isolamento, scatto RCD)
+  - Raccolta facoltativa firma touch del committente sul tablet
+[OUTPUT]
+  - ROL giornaliero di squadra firmato e trasmesso
+  - DDT controfirmati per avvenuta ricezione merce
+  - Report fotografico dello stato avanzamento cantiere
+  - Verbali di collaudo strumentale CEI 64-8/6
+[SQUADRA & RELAZIONI]
+  - Coordina: Operai Specializzati e Apprendisti della squadra di cantiere
+  - Risponde a: Project Manager / Ufficio Tecnico
+  - Collabora con: Referente del Committente in cantiere e Autisti/Vettori
+
+--------------------------------------------------------------------------------
+2.5 OPERAIO SPECIALIZZATO ELETTRICISTA (4 Addetti: Cablatori PES/PAV)
+--------------------------------------------------------------------------------
+[INPUT]
+  - Assegnazione mansioni giornaliere dal Capocantiere
+  - Schemi esecutivi di montaggio quadri BT, morsettiere e inverter
+  - Componenti e minuteria prelevati da distinta DDT
+[PROCESSO & COMPETENZE]
+  - Esecuzione lavorazioni a regola d'arte secondo Norma CEI 64-8
+  - Infilaggio conduttori dorsali, cablaggio quadri di distribuzione
+  - Lavori fuori e in prossimità di tensione secondo Norma CEI 11-27
+  - Riparazione dispositivi, diagnosi guasti e sostituzione ricambi
+  - Registrazione delle proprie ore e supporto alla compilazione ROL
+[OUTPUT]
+  - Impianto installato, cablato e pronto per le verifiche strumentali
+  - Ore di lavoro accreditate nel ROL di squadra
+  - Segnalazione immediata anomalie o varianti rispetto al progetto
+[SQUADRA & RELAZIONI]
+  - Coordina: Tutoraggio pratico degli Apprendisti assegnati
+  - Risponde a: Capocantiere
+  - Collabora con: Elettricisti colleghi e Ufficio Tecnico
+
+--------------------------------------------------------------------------------
+2.6 APPRENDISTA ELETTRICISTA (5 Addetti: In Formazione Professionale)
+--------------------------------------------------------------------------------
+[INPUT]
+  - Direttive operative del Capocantiere o dell'Operaio Tutor
+  - DPI assegnati (scarpe dielettriche, guanti isolanti, elmetto, visiera)
+  - Piano formativo aziendale e registro presenze
+[PROCESSO & COMPETENZE]
+  - Posa canaline asolate, tubazioni corrugate e staffaggi a soffitto
+  - Supporto manuale all'infilaggio conduttori e preparazione scatole
+  - Scarico merci da furgone secondo indicazioni del DDT
+  - Riordino attrezzi, custodia strumenti di misura e pulizia postazione
+  - Apprendimento attivo norme CEI e prescrizioni del POS
+[OUTPUT]
+  - Lavorazioni preparatorie e di supporto completate
+  - Ore di lavoro e formazione registrate nel ROL di squadra
+  - Avanzamento nel libretto formativo dell'apprendistato
+[SQUADRA & RELAZIONI]
+  - Coordina: Nessuna risorsa
+  - Risponde a: Capocantiere e Operaio Tutor
+  - Collabora con: Tutta la squadra operativa di cantiere
+
+--------------------------------------------------------------------------------
+2.7 COMMITTENTE, DIREZIONE LAVORI (D.L.) & CLIENTE FINALE (20+ Clienti)
+--------------------------------------------------------------------------------
+[INPUT]
+  - Preventivi economici dettagliati con computo voci
+  - Libretti delle misure e bozze SAL emesse dall'ufficio tecnico
+  - ROL riassuntivo presentato dal Capocantiere a fine intervento
+  - Documentazione fotografica as-built e certificati DiCo 37/08
+[PROCESSO & COMPETENZE]
+  - Accettazione offerte commerciali online con 1-click
+  - Controllo misure in cantiere ed emissione Certificati di Pagamento SAL (D.L.)
+  - Verifica della Congruità della Manodopera D.M. 143/2021 prima dello svincolo
+  - Apposizione firma touch grafometrica su tablet a fine turno (facoltativa)
+  - Accesso autonomo al Portale Clienti per download fatture e certificati
+[OUTPUT]
+  - Preventivi approvati contrattualmente
+  - Certificati di Pagamento SAL firmati dalla Direzione Lavori
+  - Benestare liquidazione fatture elettroniche
+[SQUADRA & RELAZIONI]
+  - Risponde a: Proprietà dell'opera / Ente Appaltante
+  - Collabora con: Project Manager, Capocantiere e Ufficio Amministrazione
+
+================================================================================
+3. SCHEMI A BLOCCHI DEI WORKFLOW OPERATIVI INTEGRATI
+================================================================================
+
+--------------------------------------------------------------------------------
+3.1 CICLO DI VITA ROL (LAVORO, VIAGGIO, RIPARAZIONI & RICAMBI)
+--------------------------------------------------------------------------------
+
+[FASE 1: CREAZIONE & TIMBRATURA SQUADRA (Cantiere Mobile)]
+  Attore: Capocantiere / Elettricista
+  Azione: 1. Scansione QR Cantiere -> Selezione Cantiere
+          2. Selezione Macro-Categoria Lavorazione:
+             - Attività di Cantiere (Installazione e Posa)
+             - Attività di Officina / Cablaggio Quadri
+             - Manutenzione e Riparazione Dispositivi
+          3. Compilazione Ore Lavoro (Ordinarie e Straordinarie per ciascun operaio)
+          4. GESTIONE ORE DI VIAGGIO (Toggle facoltativo, default OFF):
+             - Se attivo: Inserimento ore viaggio, selezione veicolo (targa/modello),
+               tragitto e km percorsi.
+          5. SEZIONE RIPARAZIONI (se manutenzione):
+             - Descrizione guasto/anomalia, ricambi sostituiti (partsReplaced)
+             - Caricamento foto con preview e lightbox integrato.
+          6. Calcolo automatico in tempo reale: Ore Totali = Lavoro + Viaggio.
+  Stato:  [BOZZA / REGISTRATO INTERNO]
+          (Opzione firma cliente disattivata di default per uso interno).
+
+                    |
+                    v
+
+[FASE 2: CONFERMA TOUCH COMMITTENTE (FACOLTATIVA)]
+  Attore: Capocantiere + Committente sul posto
+  Condizione: Attivata solo se si abilita il toggle "Invia e Firma Cliente".
+  Azione: Visualizzazione prospetto riassuntivo -> Raccolta firma touch a display.
+  Stato:  [INVIATO CON FIRMA] (o [BOZZA INTERNA] se non abilitata).
+
+                    |
+                    v
+
+[FASE 3: VALIDAZIONE TECNICA & COLLAUDO (Ufficio Tecnico)]
+  Attore: Project Manager
+  Azione: Verifica corrispondenza fasi SAL, conformità ricambi e ore cantiere.
+  Stato:  [VALIDATO TECNICO]
+
+                    |
+                    v
+
+[FASE 4: APPROVAZIONE AMMINISTRATIVA & PAGHE (Contabilità)]
+  Attore: Responsabile Amministrativo
+  Azione: Click "Approva ROL":
+          1. Accredito automatico ore ordinarie, straordinarie e viaggio a tutti i colleghi
+          2. Valorizzazione al costo orario reale del personale
+          3. Aggiornamento in tempo reale del Cruscotto di Controllo di Gestione Commessa.
+  Stato:  [APPROVATO] -> [ARCHIVIATO / PAGHE]
+
+--------------------------------------------------------------------------------
+3.2 WORKFLOW DDT & LOGISTICA FURGONI (D.P.R. 472/96)
+--------------------------------------------------------------------------------
+
+[EMISSIONE DDT] 
+  Uff. Tecnico / Magazzino compila DDT con cantiere destinazione, vettore/furgone,
+  autista e righe merci (SKU, q.tà, matricole). Stato: [IN_VIAGGIO].
+  Se attivo "Scarica Magazzino" -> Giacenze centrali decrementate in tempo reale.
+
+                    |
+                    v
+
+[TRASPORTO & CONSEGNA IN CANTIERE]
+  Autista trasporta merci su mezzo aziendale (D.P.R. 472/96 a bordo).
+  Arrivo in cantiere -> Capocantiere o D.L. verifica colli e firma su tablet.
+  Stato: [CONSEGNATO].
+
+                    |
+                    v
+
+[IMPUTAZIONE COSTI AL CANTIERE]
+  Le righe del DDT vengono agganciate alla commessa e valorizzate al prezzo di acquisto.
+  I costi confluiscono automaticamente nel Widget di Controllo di Gestione.
+
+--------------------------------------------------------------------------------
+3.3 WORKFLOW SAL & VERIFICA CONGRUITÀ MANODOPERA (D.M. 143/2021)
+--------------------------------------------------------------------------------
+
+[REDAZIONE LIBRETTO DELLE MISURE & SAL]
+  Project Manager inserisce le quantità eseguite a corpo e a misura nel SAL.
+  Calcolo totale maturato del periodo e totale cumulato dall'inizio lavori.
+
+                    |
+                    v
+
+[VERIFICA AUTOMATICA CONGRUITÀ MANODOPERA (D.M. 143/2021)]
+  Il motore normativo confronta in tempo reale:
+  - Ore effettive registrate nei ROL (valorizzate al costo orario medio €35/h)
+  - Valore dell'importo lavori SAL (cumulato o di periodo)
+  - Tabella Ministeriale (OG11/OS30 14%, OG9 14%, OS19 14%, OG1 14.28%, ecc.)
+  
+  Esito Calcolato:
+  * SE % Manodopera >= Soglia Minima -> [✓ CONGRUO · Rilasciabile CNCE]
+  * SE % Manodopera < Soglia Minima  -> [⚠ NON CONGRUO · Blocco Pagamento]
+    (Calcolo automatico dell'importo mancante in € e delle ore ROL da integrare,
+     con simulatore per inserimento giustificativi subappalto/nolo a caldo).
+
+                    |
+                    v
+
+[EMISSIONE CERTIFICATO DI PAGAMENTO & FATTURAZIONE SDI]
+  Approvazione Direttore dei Lavori -> Emissione Certificato di Pagamento ->
+  Fatturazione elettronica SDI con allegato prospetto di congruità Cassa Edile.
+
+--------------------------------------------------------------------------------
+3.4 WORKFLOW CONTROLLO DI GESTIONE & MARGINE REALE COMMESSA
+--------------------------------------------------------------------------------
+
++-----------------------+   +-----------------------+   +-----------------------+
+|  COSTI MANODOPERA ROL |   |  COSTI MATERIALI DDT  |   | RICAVI MATURATI (SAL) |
+| (Ore ord/str/viaggio  |   | (Righe merci scaricate|   | (Lavori cumulati      |
+|  x Costo Orario Pers.)|   |  x Prezzo di Acquisto)|   |  certificati da D.L.) |
++-----------+-----------+   +-----------+-----------+   +-----------+-----------+
+            |                           |                           |
+            +---------------------------+---------------------------+
+                                        |
+                                        v
++-------------------------------------------------------------------------------+
+|                    CRUSCOTTO REDDITIVITÀ DI CANTIERE (EAC)                    |
+|                                                                               |
+|  1. Costi Consuntivati = Manodopera (ROL) + Materiali (DDT) + Spese Generali  |
+|  2. Margine Reale Corrente (€ e %) = Ricavi SAL - Costi Consuntivati          |
+|  3. Benchmark vs Preventivo Iniziale: Calcolo Scostamenti (Variance Analysis) |
+|  4. Proiezione a Fine Lavori (Estimate At Completion - EAC)                   |
+|  5. Semaforo Salute Commessa: 🟢 Ottimale | 🟡 Sotto Pressione | 🔴 Extra-Costo|
++-------------------------------------------------------------------------------+
+
+--------------------------------------------------------------------------------
+3.5 WORKFLOW PRESENZE & TIMESHEET CANTIERE (D.LGS 81/08)
+--------------------------------------------------------------------------------
+
+[TIMBRATURA RAPIDA SQUADRA CAMPO]
+  Capocantiere seleziona i colleghi presenti sul cantiere -> Timbratura con 1 click.
+  Registrazione orario ingresso/uscita conforme a D.Lgs 81/08.
+
+                    |
+                    v
+
+[QUADRATURA CON I ROL GIORNALIERI]
+  La contabilità verifica la corrispondenza tra ore di presenza in cantiere e ore
+  operative rendicontate nelle lavorazioni ROL, garantendo tracciabilità totale.
+
+================================================================================
+4. MATRICE DELLE RESPONSABILITÀ AGGIORNATA (RACI MATRIX)
+================================================================================
+
+LEGENDA:
+  R = Responsible (Esegue materialmente l'attività)
+  A = Accountable (Ha la responsabilità finale e approva)
+  C = Consulted   (Fornisce dati, pareri e supporto operativo)
+  I = Informed    (Riceve notifica a processo concluso)
+
++-----------------------------------------+---+---+---+---+---+---+---+
+| PROCESSO AZIENDALE                      |DIR|AM |UT |CAP|OP |APP|CLI|
++-----------------------------------------+---+---+---+---+---+---+---+
+| 1. Computo & Preventivazione Esecutiva  | A | I | R | C | I | I | C |
+| 2. Approvazione Preventivo Committente  | A | C | C | I | I | I | R |
+| 3. Pianificazione Cantieri e Squadre    | I | I |A/R| C | I | I | I |
+| 4. Emissione & Scarico Merci con DDT    | I | C |A/R| R | C | I | I |
+| 5. Timbratura Timesheet D.Lgs 81/08     | I | I | C | R | R | R | I |
+| 6. Compilazione ROL (Lavoro + Viaggio)  | I | I | C | R | C | C | I |
+| 7. Scheda Riparazioni & Ricambi ROL     | I | I | C | R | R | I | I |
+| 8. Firma Touch Cliente sul Posto (Opt)  | I | I | I | C | I | I | R |
+| 9. Redazione Libretto Misure & SAL      | I | C |A/R| C | I | I | C |
+| 10. Verifica Congruità D.M. 143/2021    | A | R | C | I | I | I | C |
+| 11. Certificato Pagamento & Fattura SDI | A | R | C | I | I | I | I |
+| 12. Controllo Gestione & Margine Reale  | A | R | C | I | I | I | I |
+| 13. Emissione DiCo ex DM 37/08          | A | I | R | C | I | I | I |
+| 14. Gestione Scadenziario DURC/Patentini| A | R | C | I | I | I | I |
++-----------------------------------------+---+---+---+---+---+---+---+
+DIR = Direzione/Amm. Unico | AM = Contabilità | UT = Ufficio Tecnico
+CAP = Capocantiere         | OP = Operaio Spec.| APP = Apprendista | CLI = Cliente
+
+================================================================================
+5. NORMATIVE TECNICHE, ABILITAZIONI E CONFORMITÀ DI LEGGE
+================================================================================
+
+1. DECRETO MINISTERIALE n. 143/2021 (Congruità dell'Incidenza della Manodopera):
+   - Applicazione obbligatoria negli appalti pubblici e privati (lavori edili/impiantistici).
+   - Soglia minima categoria OG11/OS30 (Impianti Elettrici e Speciali): 14,00%.
+   - Blocco del saldo dei SAL e dell'attestazione CNCE Edilconnect in caso di non congruità.
+
+2. D.P.R. n. 472/1996 e D.Lgs 286/2005 (Documenti di Trasporto e Autotrasporto Merci):
+   - Emissione del DDT con causale trasporto, numero colli, peso, vettore e conducente.
+   - Tracciabilità dei materiali scaricati su commessa e scarico automatico del magazzino.
+
+3. NORMA CEI 64-8 (Impianti Elettrici utilizzatori BT):
+   - Progettazione e dimensionamento delle condutture, calcolo cdt% e verifiche CEI 64-8/6.
+
+4. NORMA CEI 11-27 (Lavori su Impianti Elettrici in BT e MT):
+   - Qualifiche obbligatorie: PES (Esperto), PAV (Avvertito), PEI (Idoneo sotto tensione).
+
+5. DECRETO MINISTERIALE 37/2008 (Sicurezza Impianti negli Edifici):
+   - Art. 7: Dichiarazione di Conformità (DiCo) completa di allegati tecnici obbligatori.
+
+6. D.LGS 81/2008 (Testo Unico sulla Salute e Sicurezza sul Lavoro):
+   - Obblighi del Preposto di Cantiere (Art. 19), redazione POS e registro presenze di cantiere.
+
+================================================================================
+6. ARCHITETTURA DELLE 4 MACRO-AREE E INTERFACCE SOFTWARE
+================================================================================
+
+--------------------------------------------------------------------------------
+6.1 RIORGANIZZAZIONE UX DELLA SIDEBAR IN 4 CARTELLE TEMATICHE
+--------------------------------------------------------------------------------
+
+Il menu di navigazione laterale è strutturato in 4 cartelle logiche con Ricerca Rapida:
+
+1. 🏗️ CANTIERE & OPERAZIONI (Accento Ambra)
+   - Commesse & Cantieri (22+ commesse con stato e avanzamento)
+   - Presenze & Timesheet (Timbratura presenze D.Lgs 81/08)
+   - ROL & Ore Lavoro (Rapportini con lavoro, viaggio e riparazioni)
+   - Gestione Operativa (Pianificazione fasi e lavorazioni di cantiere)
+   - Campo Smartphone (Interfaccia mobile touch per tecnici operativi)
+
+2. 🚚 LOGISTICA & FLOTTA (Accento Ciano/Blu)
+   - Documenti di Trasporto DDT (Emissione, tracciamento e scarico merci)
+   - Magazzino & Materiali (Giacenze con QR Code, scorte e prezzi acquisto)
+   - Ordini Fornitori (Ciclo acquisti e ordini interni)
+   - Attrezzature & Tarature (Asset aziendali con scadenze CEI 64-8)
+   - Flotta & Furgoni (Manutenzioni veicoli, rifornimenti e chilometraggi)
+
+3. 💶 CONTABILITÀ & SAL (Accento Smeraldo)
+   - SAL & Contabilità Cantiere (Libretti delle misure e certificati pagamento)
+   - Verifica Congruità D.M. 143/2021 (Calcolo incidenza manodopera CNCE)
+   - Controllo Gestione & Margini (Cruscotto EAC incrociato ROL/DDT/SAL)
+   - Preventivi & Listini (Computi estimativi e offerte commerciali)
+
+4. 🛡️ SICUREZZA & AMMINISTRAZIONE (Accento Viola/Indaco)
+   - Scadenziario a Semaforo (Monitoraggio DURC, CEI 11-27, visite mediche)
+   - Documenti & POS (Archivio documentale tecnico e contrattuale)
+   - Anagrafica Dipendenti (Schede personale, qualifiche e tariffe orarie)
+   - Portale Clienti (Area riservata esterna per i committenti)
+
+--------------------------------------------------------------------------------
+6.2 LE 4 INTERFACCE OPERATIVE MULTI-DISPOSITIVO
+--------------------------------------------------------------------------------
+
+1. INTERFACCIA AMMINISTRAZIONE & CONTROLLO GESTIONE (Desktop)
+   - Utenti: 3 Addetti Contabilità / Amministrazione
+   - Funzioni: Controllo Margine Reale (EAC), Congruità D.M. 143/2021, validazione
+     ROL per paghe, liquidazione SAL e fatturazione SDI.
+
+2. INTERFACCIA UFFICIO TECNICO & PROJECT MANAGEMENT (Workstation)
+   - Utenti: 4 Tecnici / PM / Preventivisti
+   - Funzioni: Redazione computi, emissione DDT merci, libretti misure SAL,
+     Dichiarazioni di Conformità DiCo 37/08 e schemi CEI 64-8.
+
+3. INTERFACCIA CANTIERE MOBILE TOUCH (Smartphone / Tablet)
+   - Utenti: 13 Tecnici di Campo (4 Capi Cantiere + 4 Operai + 5 Apprendisti)
+   - Funzioni: Scansione QR Cantiere, timbratura presenze squadra, compilazione ROL
+     con ore viaggio e ricambi, ricezione DDT con firma e foto cantiere.
+
+4. INTERFACCIA PORTALE CLIENTI COMMITTENTI (Web Riservato)
+   - Utenti: 20+ Clienti con isolamento dati
+   - Funzioni: Approvazione preventivi con 1 click, consultazione SAL fotografici,
+     download DiCo 37/08 e verifica attestazioni di congruità.
+
+================================================================================
+FINE DOCUMENTO - SCHEMI A BLOCCHI DEI RUOLI & WORKFLOW AZIENDALE V3.0
+File generato dal Sistema Informativo Integrato Impianti Elettrici
+================================================================================
