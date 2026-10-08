@@ -61,6 +61,7 @@ import { DEPOSITI } from '../data/depositi';
 import { CANTIERI } from '../data/cantieri';
 import { RIFORNIMENTI } from '../data/rifornimenti';
 import { DepositoRecord, RifornimentoRecord } from '../types/gestioneOperativa';
+import { ArticoloListinoFornitore, LISTINO_REMATARLAZZI } from '../data/listinoFornitore';
 import {
   saveActiveDataToOfflineCache,
   getOfflineCacheMetadataSync,
@@ -94,7 +95,9 @@ export type NavigationTab =
   | 'mappa_gps'
   | 'powerapps_flotta_asset'
   | 'richieste_materiali'
-  | 'sicurezza_cantiere';
+  | 'sicurezza_cantiere'
+  | 'gantt_squadre'
+  | 'fatturazione_elettronica';
 
 export interface Toast {
   id: string;
@@ -132,6 +135,10 @@ interface AppContextType {
   rifornimenti: RifornimentoRecord[];
   documenti: DocumentoTecnico[];
   segnalazioni: SegnalazioneCliente[];
+
+  // Listino Fornitore (RemaTarlazzi)
+  listinoFornitore: ArticoloListinoFornitore[];
+  updateListinoFornitore: (items: ArticoloListinoFornitore[]) => void;
 
   // Mutators
   addCantiere: (c: Omit<Cantiere, 'id'>) => Cantiere;
@@ -370,6 +377,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [segnalazioni, setSegnalazioni] = useState<SegnalazioneCliente[]>(() => loadFromStorage('segnalazioni', INITIAL_SEGNALAZIONI));
   const [ordiniInterni, setOrdiniInterni] = useState<OrdineInterno[]>(() => loadFromStorage('ordini_interni', INITIAL_ORDINI_INTERNI));
   const [fornitori, setFornitori] = useState<FornitoreAnagrafica[]>(() => loadFromStorage('fornitori', INITIAL_FORNITORI));
+  const [listinoFornitore, setListinoFornitore] = useState<ArticoloListinoFornitore[]>(() =>
+    loadFromStorage('listino_rematarlazzi_v1', LISTINO_REMATARLAZZI)
+  );
+
+  const updateListinoFornitore = (items: ArticoloListinoFornitore[]) => {
+    setListinoFornitore(items);
+    localStorage.setItem(STORAGE_PREFIX + 'listino_rematarlazzi_v1', JSON.stringify(items));
+  };
   const [presenze, setPresenze] = useState<PresenzaCantiere[]>(() => loadFromStorage('presenze', INITIAL_PRESENZE));
   const [sals, setSals] = useState<StatoAvanzamentoLavori[]>(() => loadFromStorage('sals', INITIAL_SALS));
   const [scadenze, setScadenze] = useState<ScadenzaItem[]>(() => loadFromStorage('scadenze', INITIAL_SCADENZE));
@@ -2037,6 +2052,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         segnalazioni,
         ordiniInterni,
         fornitori,
+        listinoFornitore,
+        updateListinoFornitore,
         presenze,
         sals,
         scadenze,

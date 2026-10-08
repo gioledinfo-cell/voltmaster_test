@@ -44,6 +44,8 @@ import { EtichettaColloA5Modal } from './components/magazzino/EtichettaColloA5Mo
 import { ConfermaCaricoPaccoModal } from './components/magazzino/ConfermaCaricoPaccoModal';
 import { NuovoPaccoZonaVerdeModal } from './components/magazzino/NuovoPaccoZonaVerdeModal';
 import { SicurezzaCantierePanel } from './components/sicurezza/SicurezzaCantierePanel';
+import { GanttSquadreModule } from './components/gantt/GanttSquadreModule';
+import { FatturaElettronicaModal } from './components/fatturazione/FatturaElettronicaModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { CheckCircle2, AlertTriangle, Info, XCircle, X } from 'lucide-react';
@@ -143,6 +145,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ forcedTab }) => {
                 {activeTab === 'presenze_cantiere' && <PresenzeModule />}
                 {activeTab === 'sal_cantiere' && <SalModule />}
                 {activeTab === 'ddt_trasporto' && <DdtModule />}
+                {activeTab === 'gantt_squadre' && <GanttSquadreModule />}
+                {activeTab === 'fatturazione_elettronica' && (
+                  <FatturaElettronicaModal
+                    isOpen={true}
+                    isEmbedded={true}
+                    onClose={() => setActiveTab('contabilita_kpi')}
+                  />
+                )}
                 {activeTab === 'sicurezza_cantiere' && <SicurezzaCantierePanel />}
                 {activeTab === 'mappa_gps' && <AdminMapView />}
                 {activeTab === 'scadenziario' && <ScadenziarioModule />}

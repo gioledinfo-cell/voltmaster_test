@@ -36,8 +36,12 @@ export interface Cliente {
   telefono: string;
   indirizzo: string;
   citta: string;
+  cap?: string;
+  provincia?: string;
   partitaIva: string;
   codiceFiscale?: string;
+  codiceUnivocoSdi?: string;
+  pec?: string;
   note?: string;
 }
 
@@ -214,7 +218,13 @@ export interface ROL {
   photos?: string[]; // Foto dell'intervento o componente sostituito
 
   descrizioneLavori: string;
-  materialiUtilizzati?: { nome: string; quantita: number; unita: string }[];
+  materialiUtilizzati?: {
+    nome: string;
+    quantita: number;
+    unita: string;
+    prezzoUnitario?: number;
+    codiceArticolo?: string;
+  }[];
   noteOperatore?: string;
   stato: ROLStato;
   
@@ -379,6 +389,8 @@ export interface Veicolo {
   // Mappatura Elenco_veicoli.csv & Rifornimenti
   veicolo?: string;
   modelloTipologia?: string;
+  tipo?: string;
+  portataKg?: number;
   euro?: string;
   statoPowerApps?: string;
   assegnato?: string;
@@ -578,3 +590,4 @@ export * from './gpsScan';
 export * from './richiestaMateriali';
 export * from './zonaVerde';
 export * from './sicurezzaCantiere';
+export type { ArticoloListinoFornitore } from '../data/listinoFornitore';

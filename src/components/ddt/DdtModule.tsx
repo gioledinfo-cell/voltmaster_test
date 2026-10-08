@@ -17,12 +17,14 @@ import {
   Building2,
   ShieldCheck,
   AlertCircle,
+  FileCode,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { DocumentoDiTrasporto, StatoDDT } from '../../types/ddt';
 import { DdtPrintModal } from './DdtPrintModal';
 import { DdtFormModal } from './DdtFormModal';
 import { DdtDetailModal } from './DdtDetailModal';
+import { FatturaElettronicaModal } from '../fatturazione/FatturaElettronicaModal';
 import { exportDdtsToCsv } from '../../utils/ddtExportService';
 import { exportDdtToExcel, generateDdtPdf } from '../../services/exportService';
 
@@ -34,6 +36,7 @@ export const DdtModule: React.FC = () => {
   const [filterCantiere, setFilterCantiere] = useState<string>('tutti');
 
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const [isFatturaModalOpen, setIsFatturaModalOpen] = useState(false);
   const [selectedDdtForDetail, setSelectedDdtForDetail] = useState<DocumentoDiTrasporto | null>(null);
   const [selectedDdtForPrint, setSelectedDdtForPrint] = useState<DocumentoDiTrasporto | null>(null);
 
@@ -114,6 +117,15 @@ export const DdtModule: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => setIsFatturaModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-lg transition-colors shadow-xs"
+            title="Converti DDT e ROL in Fattura Elettronica XML SDI (FPR12)"
+          >
+            <FileCode className="w-4 h-4" />
+            <span>Fattura Elettronica SDI</span>
+          </button>
+
           <button
             onClick={() => exportDdtToExcel(filteredDdts)}
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors shadow-xs"
@@ -373,6 +385,14 @@ export const DdtModule: React.FC = () => {
         <DdtPrintModal
           ddt={selectedDdtForPrint}
           onClose={() => setSelectedDdtForPrint(null)}
+        />
+      )}
+
+      {/* Modal Fatturazione Elettronica SDI */}
+      {isFatturaModalOpen && (
+        <FatturaElettronicaModal
+          isOpen={isFatturaModalOpen}
+          onClose={() => setIsFatturaModalOpen(false)}
         />
       )}
     </div>

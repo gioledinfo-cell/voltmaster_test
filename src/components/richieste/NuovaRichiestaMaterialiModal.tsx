@@ -16,6 +16,7 @@ import {
   Mail,
   Smartphone,
   Info,
+  ShoppingBag,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -23,6 +24,10 @@ import {
   RigaRichiestaMateriali,
   TipoElementoRichiesto,
 } from '../../types/richiestaMateriali';
+import { ArticoloMagazzino } from '../../types';
+import { MagazzinoSearchSelectModal } from '../common/MagazzinoSearchSelectModal';
+import { ListinoFornitoreSearchSelectModal } from '../common/ListinoFornitoreSearchSelectModal';
+import { ArticoloListinoFornitore } from '../../data/listinoFornitore';
 
 interface NuovaRichiestaMaterialiModalProps {
   isOpen: boolean;
@@ -47,6 +52,12 @@ export const NuovaRichiestaMaterialiModal: React.FC<NuovaRichiestaMaterialiModal
   const [orarioPreferito, setOrarioPreferito] = useState<string>('Mattina entro le 08:30');
   const [noteCantiere, setNoteCantiere] = useState<string>('');
 
+  // Modals di selezione separati
+  const [isMagazzinoModalOpen, setIsMagazzinoModalOpen] = useState(false);
+  const [isListinoModalOpen, setIsListinoModalOpen] = useState(false);
+  const [isAttrezzatureOpen, setIsAttrezzatureOpen] = useState(false);
+  const [attrezzaturaSearch, setAttrezzaturaSearch] = useState('');
+
   // Righe
   const [righe, setRighe] = useState<RigaRichiestaMateriali[]>([
     {
@@ -61,30 +72,39 @@ export const NuovaRichiestaMaterialiModal: React.FC<NuovaRichiestaMaterialiModal
     },
   ]);
 
-  // Selettore rapido articolo
-  const [tipoNuovo, setTipoNuovo] = useState<TipoElementoRichiesto>('materiale');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-
   if (!isOpen) return null;
 
   const currentCantiere = cantieri.find((c) => c.id === cantiereId) || cantieri[0];
 
-  const handleAddRigaFromMagazzino = (art: typeof magazzino[0]) => {
+  // Aggiunta da Magazzino Interno (Pulsante Blu)
+  const handleAddFromMagazzino = (art: ArticoloMagazzino, qty: number = 10) => {
     const newRiga: RigaRichiestaMateriali = {
       id: `riga-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       tipo: 'materiale',
       articoloId: art.id,
       codice: art.codiceSku,
       descrizione: art.nome,
-      quantitaRichiesta: 10,
+      quantitaRichiesta: qty || 10,
       unitaMisura: art.unitaMisura,
       quantitaDisponibileMagazzino: art.giacenza,
-      note: `Scaffale: ${art.ubicazioneScaffale}`,
+      note: art.giacenza > 0 ? `A scaffale: ${art.ubicazioneScaffale}` : 'Sottoscorta a magazzino',
     };
     setRighe((prev) => [...prev, newRiga]);
-    setIsSearchOpen(false);
-    setSearchTerm('');
+  };
+
+  // Aggiunta da Listino RemaTarlazzi (Pulsante Arancione)
+  const handleAddFromListino = (item: ArticoloListinoFornitore, qty: number = 1) => {
+    const newRiga: RigaRichiestaMateriali = {
+      id: `riga-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      tipo: 'materiale',
+      codice: item.codiceFornitore,
+      descrizione: item.descrizione,
+      quantitaRichiesta: qty || 1,
+      unitaMisura: item.unitaMisura,
+      quantitaDisponibileMagazzino: 0,
+      note: `Da ordinare a fornitore RemaTarlazzi (${item.marchio}) - €${item.prezzoAcquisto.toFixed(2)}`,
+    };
+    setRighe((prev) => [...prev, newRiga]);
   };
 
   const handleAddRigaFromAttrezzatura = (att: typeof attrezzature[0]) => {
@@ -100,8 +120,7 @@ export const NuovaRichiestaMaterialiModal: React.FC<NuovaRichiestaMaterialiModal
       note: `Matricola: ${att.matricola}`,
     };
     setRighe((prev) => [...prev, newRiga]);
-    setIsSearchOpen(false);
-    setSearchTerm('');
+    setIsAttrezzatureOpen(false);
   };
 
   const handleAddRigaLibera = () => {
@@ -172,17 +191,11 @@ export const NuovaRichiestaMaterialiModal: React.FC<NuovaRichiestaMaterialiModal
     onClose();
   };
 
-  const filteredMateriali = magazzino.filter(
-    (m) =>
-      m.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.codiceSku.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const filteredAttrezzature = attrezzature.filter(
     (a) =>
-      a.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.codiceUnivoco.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.marcaModello.toLowerCase().includes(searchTerm.toLowerCase())
+      a.nome.toLowerCase().includes(attrezzaturaSearch.toLowerCase()) ||
+      a.codiceUnivoco.toLowerCase().includes(attrezzaturaSearch.toLowerCase()) ||
+      a.marcaModello.toLowerCase().includes(attrezzaturaSearch.toLowerCase())
   );
 
   return (
@@ -196,8 +209,8 @@ export const NuovaRichiestaMaterialiModal: React.FC<NuovaRichiestaMaterialiModal
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                  Campo ➔ Magazzino Live
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-mono">
+                  Campo ➔ Magazzino / Fornitore
                 </span>
                 <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">
                   Notifica push e invio email istantanei
@@ -321,42 +334,53 @@ export const NuovaRichiestaMaterialiModal: React.FC<NuovaRichiestaMaterialiModal
             </div>
           </div>
 
-          {/* Articoli & Attrezzature Richieste */}
+          {/* Articoli & Attrezzature Richieste con DUE PULSANTI DISTINTI */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-xs text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                   Distinta Materiali & Attrezzature ({righe.length})
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* DUE PULSANTI SEPARATI PER MATERIALE */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* a) PULSANTE BLU: Aggiungi da Magazzino */}
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsSearchOpen(true);
-                    setTipoNuovo('materiale');
-                  }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold transition-colors shadow-xs"
+                  onClick={() => setIsMagazzinoModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-600/20 cursor-pointer"
+                  title="Mostra ESCLUSIVAMENTE articoli presenti nel magazzino interno con giacenza disponibile"
                 >
-                  <Warehouse className="w-3.5 h-3.5" />
-                  <span>+ Da Magazzino</span>
+                  <Warehouse className="w-4 h-4 text-blue-200" />
+                  <span>Aggiungi da Magazzino</span>
                 </button>
+
+                {/* b) PULSANTE ARANCIONE: Aggiungi da Listino RemaTarlazzi */}
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsSearchOpen(true);
-                    setTipoNuovo('attrezzatura');
-                  }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold transition-colors shadow-xs"
+                  onClick={() => setIsListinoModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 rounded-xl text-xs font-extrabold transition-all shadow-md shadow-amber-500/20 cursor-pointer"
+                  title="Mostra ESCLUSIVAMENTE articoli del catalogo fornitore RemaTarlazzi da ordinare"
                 >
-                  <Wrench className="w-3.5 h-3.5" />
-                  <span>+ Attrezzatura</span>
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>Aggiungi da Listino RemaTarlazzi</span>
                 </button>
+
+                {/* Opzioni di servizio */}
+                <button
+                  type="button"
+                  onClick={() => setIsAttrezzatureOpen(!isAttrezzatureOpen)}
+                  className="inline-flex items-center gap-1 px-2.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700"
+                >
+                  <Wrench className="w-3.5 h-3.5 text-cyan-600" />
+                  <span>Attrezzatura</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleAddRigaLibera}
-                  className="inline-flex items-center gap-1 px-2 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700"
+                  className="inline-flex items-center gap-1 px-2.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700"
                   title="Inserisci voce libera non a listino"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -365,18 +389,18 @@ export const NuovaRichiestaMaterialiModal: React.FC<NuovaRichiestaMaterialiModal
               </div>
             </div>
 
-            {/* Ricerca e Aggiunta a tendina / modale rapido */}
-            {isSearchOpen && (
-              <div className="p-3 bg-amber-50/70 dark:bg-amber-950/20 border border-amber-300 dark:border-amber-700/50 rounded-xl space-y-2 animate-in fade-in">
+            {/* Dropdown Attrezzature se richiesto */}
+            {isAttrezzatureOpen && (
+              <div className="p-3 bg-cyan-50/80 dark:bg-cyan-950/20 border border-cyan-300 dark:border-cyan-700/50 rounded-xl space-y-2 animate-in fade-in">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-bold text-amber-800 dark:text-amber-300">
-                    {tipoNuovo === 'materiale' ? <Warehouse className="w-4 h-4" /> : <Wrench className="w-4 h-4" />}
-                    <span>Seleziona {tipoNuovo === 'materiale' ? 'Materiale da Giacenza' : 'Strumento / Attrezzatura'}:</span>
-                  </div>
+                  <span className="text-xs font-bold text-cyan-900 dark:text-cyan-300 flex items-center gap-1.5">
+                    <Wrench className="w-4 h-4" />
+                    <span>Seleziona Strumento / Attrezzatura di Cantiere:</span>
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setIsSearchOpen(false)}
-                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+                    onClick={() => setIsAttrezzatureOpen(false)}
+                    className="text-slate-400 hover:text-slate-600 text-xs font-bold"
                   >
                     Chiudi ✕
                   </button>
@@ -386,74 +410,29 @@ export const NuovaRichiestaMaterialiModal: React.FC<NuovaRichiestaMaterialiModal
                   <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
                   <input
                     type="text"
-                    placeholder={`Cerca per nome, codice o matricola...`}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    autoFocus
+                    placeholder="Cerca per nome, codice o matricola..."
+                    value={attrezzaturaSearch}
+                    onChange={(e) => setAttrezzaturaSearch(e.target.value)}
                     className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100"
                   />
                 </div>
 
-                <div className="max-h-48 overflow-y-auto space-y-1">
-                  {tipoNuovo === 'materiale' ? (
-                    filteredMateriali.length > 0 ? (
-                      filteredMateriali.map((m) => (
-                        <div
-                          key={m.id}
-                          onClick={() => handleAddRigaFromMagazzino(m)}
-                          className="p-2 rounded-lg bg-white dark:bg-slate-850 hover:bg-amber-100/60 dark:hover:bg-amber-900/30 border border-slate-200 dark:border-slate-700 text-xs flex items-center justify-between cursor-pointer transition-colors"
-                        >
-                          <div>
-                            <div className="font-bold text-slate-900 dark:text-slate-100">{m.nome}</div>
-                            <div className="text-[10px] text-slate-500">
-                              SKU: <span className="font-mono">{m.codiceSku}</span> · Ubicazione: {m.ubicazioneScaffale}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                m.giacenza > m.scortaMinima
-                                  ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
-                                  : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
-                              }`}
-                            >
-                              Giacenza: {m.giacenza} {m.unitaMisura}
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-xs text-slate-500 p-2 text-center">Nessun articolo trovato</div>
-                    )
-                  ) : filteredAttrezzature.length > 0 ? (
-                    filteredAttrezzature.map((a) => (
-                      <div
-                        key={a.id}
-                        onClick={() => handleAddRigaFromAttrezzatura(a)}
-                        className="p-2 rounded-lg bg-white dark:bg-slate-850 hover:bg-cyan-100/60 dark:hover:bg-cyan-900/30 border border-slate-200 dark:border-slate-700 text-xs flex items-center justify-between cursor-pointer transition-colors"
-                      >
-                        <div>
-                          <div className="font-bold text-slate-900 dark:text-slate-100">{a.nome}</div>
-                          <div className="text-[10px] text-slate-500">
-                            Modello: {a.marcaModello} · Matr: <span className="font-mono">{a.matricola}</span>
-                          </div>
-                        </div>
-                        <div>
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              a.stato === 'disponibile'
-                                ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
-                                : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
-                            }`}
-                          >
-                            {a.stato.toUpperCase()}
-                          </span>
-                        </div>
+                <div className="max-h-40 overflow-y-auto space-y-1">
+                  {filteredAttrezzature.map((a) => (
+                    <div
+                      key={a.id}
+                      onClick={() => handleAddRigaFromAttrezzatura(a)}
+                      className="p-2 rounded-lg bg-white dark:bg-slate-850 hover:bg-cyan-100/60 dark:hover:bg-cyan-900/30 border border-slate-200 dark:border-slate-700 text-xs flex items-center justify-between cursor-pointer"
+                    >
+                      <div>
+                        <span className="font-bold text-slate-900 dark:text-slate-100">{a.nome}</span>
+                        <span className="text-[10px] text-slate-500 ml-2 font-mono">Matr: {a.matricola}</span>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-xs text-slate-500 p-2 text-center">Nessuna attrezzatura trovata</div>
-                  )}
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                        {a.stato.toUpperCase()}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -471,21 +450,27 @@ export const NuovaRichiestaMaterialiModal: React.FC<NuovaRichiestaMaterialiModal
                         <span
                           className={`text-[9px] font-bold uppercase px-1.5 py-0.2 rounded font-mono ${
                             r.tipo === 'materiale'
-                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                              ? r.quantitaDisponibileMagazzino && r.quantitaDisponibileMagazzino > 0
+                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300'
+                                : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
                               : 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300'
                           }`}
                         >
-                          {r.tipo}
+                          {r.tipo === 'materiale' && r.quantitaDisponibileMagazzino && r.quantitaDisponibileMagazzino > 0
+                            ? 'da magazzino'
+                            : r.tipo === 'materiale'
+                            ? 'da listino'
+                            : r.tipo}
                         </span>
                         <span className="font-bold text-slate-900 dark:text-slate-100 truncate">
                           {r.descrizione}
                         </span>
                       </div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-3">
-                        <span>Cod: <span className="font-mono">{r.codice}</span></span>
-                        {r.quantitaDisponibileMagazzino !== undefined && (
-                          <span className={r.quantitaDisponibileMagazzino >= r.quantitaRichiesta ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400 font-bold'}>
-                            Giacenza attuale: {r.quantitaDisponibileMagazzino} {r.unitaMisura}
+                        <span>Cod: <span className="font-mono font-bold">{r.codice}</span></span>
+                        {r.quantitaDisponibileMagazzino !== undefined && r.quantitaDisponibileMagazzino > 0 && (
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                            Giacenza disponibile: {r.quantitaDisponibileMagazzino} {r.unitaMisura}
                           </span>
                         )}
                       </div>
@@ -594,7 +579,22 @@ export const NuovaRichiestaMaterialiModal: React.FC<NuovaRichiestaMaterialiModal
             </button>
           </div>
         </form>
+
+        {/* MODAL 1: Pulsante Blu -> Magazzino Interno */}
+        <MagazzinoSearchSelectModal
+          isOpen={isMagazzinoModalOpen}
+          onClose={() => setIsMagazzinoModalOpen(false)}
+          onSelect={handleAddFromMagazzino}
+        />
+
+        {/* MODAL 2: Pulsante Arancione -> Listino RemaTarlazzi */}
+        <ListinoFornitoreSearchSelectModal
+          isOpen={isListinoModalOpen}
+          onClose={() => setIsListinoModalOpen(false)}
+          onSelect={handleAddFromListino}
+        />
       </div>
     </div>
   );
 };
+

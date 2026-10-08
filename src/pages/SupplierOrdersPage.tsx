@@ -42,10 +42,15 @@ import {
   Ban,
   Lock,
   Barcode,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { OrdineDetailModal } from '../components/ordini/OrdineDetailModal';
 import { OrdinePrintModal } from '../components/ordini/OrdinePrintModal';
 import { OrdineAnnullaModal } from '../components/ordini/OrdineAnnullaModal';
+import { ListinoFornitoreSearchSelectModal } from '../components/common/ListinoFornitoreSearchSelectModal';
+import { AggiornaListinoExcelModal } from '../components/magazzino/AggiornaListinoExcelModal';
+import { ImpostazioniFornitoriModal } from '../components/fornitori/ImpostazioniFornitoriModal';
+import { ArticoloListinoFornitore } from '../data/listinoFornitore';
 
 export const SupplierOrdersPage: React.FC = () => {
   const {
@@ -88,6 +93,9 @@ export const SupplierOrdersPage: React.FC = () => {
   // Modals
   const [selectedOrderDetail, setSelectedOrderDetail] = useState<OrdineInterno | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isArticlePickerOpen, setIsArticlePickerOpen] = useState(false);
+  const [isAggiornaListinoOpen, setIsAggiornaListinoOpen] = useState(false);
+  const [isImpostazioniFornitoriOpen, setIsImpostazioniFornitoriOpen] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState<OrdineInterno | null>(null);
   const [orderToPrint, setOrderToPrint] = useState<OrdineInterno | null>(null);
   const [orderToCancel, setOrderToCancel] = useState<OrdineInterno | null>(null);
@@ -461,6 +469,22 @@ export const SupplierOrdersPage: React.FC = () => {
 
           {/* Top Actions */}
           <div className="flex items-center gap-2.5 flex-wrap self-start lg:self-auto">
+            <button
+              onClick={() => setIsImpostazioniFornitoriOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 dark:text-amber-300 border border-amber-300 dark:border-amber-700/80 text-xs font-bold rounded-xl transition-colors shadow-xs cursor-pointer"
+              title="Gestione Impostazioni / Fornitori e Listino Prezzi RemaTarlazzi"
+            >
+              <Building2 className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <span>Impostazioni / Fornitori</span>
+            </button>
+            <button
+              onClick={() => setIsAggiornaListinoOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/80 text-xs font-bold rounded-xl transition-colors shadow-xs cursor-pointer"
+              title="Aggiorna i prezzi d'acquisto e listino dal file Excel RemaTarlazzi (foglio LISRTAXLS)"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>Aggiorna Listino Excel</span>
+            </button>
             <button
               onClick={() => handleOpenCreateModal()}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-cyan-600/20 transition-all active:scale-95"
@@ -896,6 +920,19 @@ export const SupplierOrdersPage: React.FC = () => {
                   <label className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                     Distinta Materiali & Prezzi di Acquisto Concordati
                   </label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* UN SOLO TASTO DEDICATO AL LISTINO FORNITORE */}
+                  <button
+                    type="button"
+                    onClick={() => setIsArticlePickerOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 rounded-xl text-xs font-extrabold transition-all shadow-md shadow-amber-500/20 cursor-pointer"
+                    title="Cerca direttamente nel catalogo/listino fornitore RemaTarlazzi"
+                  >
+                    <Search className="w-4 h-4" />
+                    <span>Cerca nel Listino Fornitore</span>
+                  </button>
+
+                  {/* Articolo a testo libero per pezzi fuori listino o codici particolari */}
                   <button
                     type="button"
                     onClick={() => {
@@ -905,23 +942,25 @@ export const SupplierOrdersPage: React.FC = () => {
                           ...formData.righe,
                           {
                             id: `r-${Date.now()}`,
-                            codiceFornitore: 'ART-NEW',
-                            descrizione: 'Nuovo articolo da ordine',
-                            quantita: 10,
+                            codiceFornitore: 'FUORI-LISTINO',
+                            descrizione: 'Articolo a testo libero / pezzo speciale',
+                            quantita: 1,
                             unitaMisura: 'pz',
-                            prezzoUnitarioAcquisto: 15.0,
+                            prezzoUnitarioAcquisto: 0.0,
                             aliquotaIva: 22,
-                            note: '',
+                            note: 'Pezzo o codice speciale non a listino',
                           },
                         ],
                       });
+                      showToast('Inserita nuova riga a testo libero per articolo fuori listino', 'info');
                     }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 rounded-lg text-xs font-bold transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Aggiungi Articolo</span>
+                    <span>Inserisci articolo a testo libero</span>
                   </button>
                 </div>
+              </div>
 
                 <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
                   <table className="w-full text-left text-xs border-collapse">
@@ -1215,6 +1254,47 @@ export const SupplierOrdersPage: React.FC = () => {
             transizioneStatoOrdine(orderToCancel.id, 'annullato', undefined, motivo);
             setOrderToCancel(null);
           }}
+        />
+      )}
+
+      {/* Listino Fornitore RemaTarlazzi Picker Modal */}
+      {isArticlePickerOpen && (
+        <ListinoFornitoreSearchSelectModal
+          isOpen={isArticlePickerOpen}
+          onClose={() => setIsArticlePickerOpen(false)}
+          onSelect={(item: ArticoloListinoFornitore, qta: number) => {
+            const newRiga = {
+              id: `riga-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+              codiceFornitore: item.codiceFornitore,
+              descrizione: item.descrizione,
+              quantita: qta || 1,
+              unitaMisura: item.unitaMisura,
+              prezzoUnitarioAcquisto: item.prezzoAcquisto,
+              aliquotaIva: 22,
+              note: `Listino RemaTarlazzi (${item.marchio})`,
+            };
+            setFormData((prev) => ({
+              ...prev,
+              righe: [...prev.righe, newRiga],
+            }));
+            setIsArticlePickerOpen(false);
+          }}
+        />
+      )}
+
+      {/* Aggiorna Listino Prezzi da Excel Modal */}
+      {isAggiornaListinoOpen && (
+        <AggiornaListinoExcelModal
+          isOpen={isAggiornaListinoOpen}
+          onClose={() => setIsAggiornaListinoOpen(false)}
+        />
+      )}
+
+      {/* Impostazioni / Fornitori Modal */}
+      {isImpostazioniFornitoriOpen && (
+        <ImpostazioniFornitoriModal
+          isOpen={isImpostazioniFornitoriOpen}
+          onClose={() => setIsImpostazioniFornitoriOpen(false)}
         />
       )}
     </div>

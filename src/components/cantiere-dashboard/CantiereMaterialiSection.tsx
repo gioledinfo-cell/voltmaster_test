@@ -10,18 +10,25 @@ import {
 } from 'lucide-react';
 import { CantiereMaterialeStock } from '../../types/cantiereDashboard';
 import { ResourceThumbnail } from '../preview/ResourceThumbnail';
+import { MaterialeSearchSelect } from '../common/MaterialeSearchSelect';
+import { ArticoloMagazzino } from '../../types';
+import { useApp } from '../../context/AppContext';
 
 interface CantiereMaterialiSectionProps {
   materiali: CantiereMaterialeStock[];
   onRichiediReintegro?: (mat: CantiereMaterialeStock) => void;
+  onAddMaterialeFromCatalog?: (art: ArticoloMagazzino, qta: number) => void;
 }
 
 export const CantiereMaterialiSection: React.FC<CantiereMaterialiSectionProps> = ({
   materiali,
   onRichiediReintegro,
+  onAddMaterialeFromCatalog,
 }) => {
+  const { showToast } = useApp();
   const [filterStock, setFilterStock] = useState<'tutti' | 'in_esaurimento'>('tutti');
   const [search, setSearch] = useState('');
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   const filtered = materiali.filter((m) => {
     const matchesSearch =
@@ -87,10 +94,20 @@ export const CantiereMaterialiSection: React.FC<CantiereMaterialiSectionProps> =
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap ${
               filterStock === 'in_esaurimento'
                 ? 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/40'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
             {filterStock === 'in_esaurimento' ? 'Mostra Tutti' : 'Solo Sottoscorta'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsPickerOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs shadow-xs transition-all cursor-pointer whitespace-nowrap active:scale-95"
+            title="Cerca nel catalogo unificato magazzino e fornitore RemaTarlazzi"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Cerca da Catalogo</span>
           </button>
         </div>
       </div>
@@ -187,6 +204,25 @@ export const CantiereMaterialiSection: React.FC<CantiereMaterialiSectionProps> =
           </tbody>
         </table>
       </div>
+
+      {/* Universal Article Picker Modal */}
+      {isPickerOpen && (
+        <MaterialeSearchSelect
+          variant="modal"
+          isOpen={isPickerOpen}
+          onClose={() => setIsPickerOpen(false)}
+          title="Seleziona Materiale per il Cantiere"
+          subtitle="Cerca nel magazzino e nel listino RemaTarlazzi per aggiungere o richiedere reintegro scorte"
+          onSelect={(art: ArticoloMagazzino, qta: number) => {
+            if (onAddMaterialeFromCatalog) {
+              onAddMaterialeFromCatalog(art, qta);
+            } else {
+              showToast(`Articolo "${art.codiceSku} - ${art.nome}" selezionato (${qta} ${art.unitaMisura})`, 'success');
+            }
+            setIsPickerOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 };

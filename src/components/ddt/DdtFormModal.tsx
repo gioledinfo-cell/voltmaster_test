@@ -1,7 +1,20 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash2, Truck, Package, Building2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import {
+  X,
+  Plus,
+  Trash2,
+  Truck,
+  Package,
+  Building2,
+  AlertTriangle,
+  CheckCircle2,
+  Search,
+  Barcode,
+} from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { CausaleDDT, AspettoBeniDDT, PortoDDT, TipoVettoreDDT, RigaDDT } from '../../types/ddt';
+import { MaterialeSearchSelect } from '../common/MaterialeSearchSelect';
+import { ArticoloMagazzino } from '../../types';
 
 interface DdtFormModalProps {
   onClose: () => void;
@@ -33,6 +46,7 @@ export const DdtFormModal: React.FC<DdtFormModalProps> = ({ onClose }) => {
   );
   const [annotazioni, setAnnotazioni] = useState('Materiale destinato alla posa in opera cantiere.');
   const [scaricaMagazzino, setScaricaMagazzino] = useState(true);
+  const [isArticlePickerOpen, setIsArticlePickerOpen] = useState(false);
 
   // Rows state
   const [righe, setRighe] = useState<RigaDDT[]>([
@@ -69,6 +83,21 @@ export const DdtFormModal: React.FC<DdtFormModalProps> = ({ onClose }) => {
         unitaMisura: defaultArt?.unitaMisura || 'pz',
         quantita: 10,
         lottoMatricola: '',
+      },
+    ]);
+  };
+
+  const handleAddRigaFromPicker = (art: ArticoloMagazzino, qta: number = 10) => {
+    setRighe((prev) => [
+      ...prev,
+      {
+        id: `r-${Date.now()}-${prev.length + 1}`,
+        articoloId: art.id,
+        sku: art.codiceSku,
+        descrizione: art.nome,
+        unitaMisura: art.unitaMisura,
+        quantita: qta || 10,
+        lottoMatricola: art.barcodeEan || '',
       },
     ]);
   };
@@ -351,14 +380,24 @@ export const DdtFormModal: React.FC<DdtFormModalProps> = ({ onClose }) => {
                 <span>3. Materiali Elettrici Trasportati ({righe.length})</span>
               </h3>
 
-              <button
-                type="button"
-                onClick={handleAddRiga}
-                className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-lg text-xs font-bold transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Aggiungi Voce</span>
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsArticlePickerOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                >
+                  <Search className="w-3.5 h-3.5" />
+                  <span>Cerca nel Catalogo / Barcode</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddRiga}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Nuova Voce</span>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-2.5">
@@ -521,6 +560,21 @@ export const DdtFormModal: React.FC<DdtFormModalProps> = ({ onClose }) => {
           </div>
         </form>
       </div>
+
+      {/* Universal Article Picker Modal */}
+      {isArticlePickerOpen && (
+        <MaterialeSearchSelect
+          variant="modal"
+          isOpen={isArticlePickerOpen}
+          onClose={() => setIsArticlePickerOpen(false)}
+          title="Seleziona Articolo per Documento di Trasporto (DDT)"
+          subtitle="Cerca nel magazzino e nel catalogo per scaricare il materiale direttamente sul cantiere"
+          onSelect={(art: ArticoloMagazzino, qta: number) => {
+            handleAddRigaFromPicker(art, qta);
+            setIsArticlePickerOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 };

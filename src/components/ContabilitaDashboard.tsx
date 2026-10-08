@@ -16,6 +16,7 @@ import {
   Eye,
   Building2,
   FileCheck,
+  FileCode,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ROLPrintModal } from './ROLPrintModal';
@@ -93,6 +94,14 @@ export const ContabilitaDashboard: React.FC = () => {
             >
               <Download className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               <span>Esporta Foglio Paghe</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('fatturazione_elettronica')}
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-colors shadow-lg shadow-blue-600/20 cursor-pointer"
+              title="Apri il modulo di fatturazione elettronica SDI (XML FPR12 a norma Agenzia delle Entrate)"
+            >
+              <FileCode className="w-4 h-4" />
+              <span>Fattura Elettronica XML</span>
             </button>
             <button
               onClick={() => setActiveTab('cantieri')}

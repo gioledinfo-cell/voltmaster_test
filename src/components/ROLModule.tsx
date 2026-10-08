@@ -42,6 +42,7 @@ import {
   Fingerprint,
   ShieldAlert,
   KeyRound,
+  FileCode,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ROL, ROLStato, ROLCollaboratore, ROLWorkType, TravelDetails } from '../types';
@@ -50,6 +51,7 @@ import { ROLPrintModal } from './ROLPrintModal';
 import { ROLEmailReportModal } from './ROLEmailReportModal';
 import { ROLSummaryReportModal } from './ROLSummaryReportModal';
 import { RolBrogliaccioExportModal } from './RolBrogliaccioExportModal';
+import { FatturaElettronicaModal } from './fatturazione/FatturaElettronicaModal';
 import { PhotoLightboxModal, PhotoLightboxData } from './preview/PhotoLightboxModal';
 import { downloadRolPdf, shareRolPdf } from '../services/rolPdfService';
 import { compressImageFile } from '../utils/imageCompressor';
@@ -198,6 +200,8 @@ export const ROLModule: React.FC = () => {
   const [emailReportRol, setEmailReportRol] = useState<ROL | null>(null);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [isBrogliaccioModalOpen, setIsBrogliaccioModalOpen] = useState(false);
+  const [isFatturaModalOpen, setIsFatturaModalOpen] = useState(false);
+  const [selectedFatturaRol, setSelectedFatturaRol] = useState<ROL | null>(null);
   const [lightboxData, setLightboxData] = useState<PhotoLightboxData | null>(null);
 
   // Digital Seal Verification State (Passo 3)
@@ -542,6 +546,18 @@ export const ROLModule: React.FC = () => {
 
           <button
             onClick={() => {
+              setSelectedFatturaRol(null);
+              setIsFatturaModalOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 dark:text-blue-300 border border-blue-300 dark:border-blue-700/80 text-xs font-bold rounded-lg transition-colors shadow-xs cursor-pointer"
+            title="Converti i rapportini ROL approvati e DDT di commessa direttamente in tracciato XML Fattura Elettronica (SDI FPR12 v1.8)"
+          >
+            <FileCode className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>Fattura Elettronica XML</span>
+          </button>
+
+          <button
+            onClick={() => {
               setFormWorkType('cantiere');
               setFormSubActivity('posa_cavi_canali');
               setFormHasTravel(false);
@@ -792,6 +808,18 @@ export const ROLModule: React.FC = () => {
                   >
                     <Printer className="w-3.5 h-3.5 text-cyan-500" />
                     Anteprima A4
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setSelectedFatturaRol(selectedRol);
+                      setIsFatturaModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700/80 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                    title="Genera Fattura Elettronica XML (SDI) per questo ROL e i DDT del cantiere"
+                  >
+                    <FileCode className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    Fattura XML
                   </button>
 
                   <button
@@ -2282,6 +2310,19 @@ export const ROLModule: React.FC = () => {
         <RolBrogliaccioExportModal
           isOpen={isBrogliaccioModalOpen}
           onClose={() => setIsBrogliaccioModalOpen(false)}
+        />
+      )}
+
+      {/* Fatturazione Elettronica XML (SDI Agenzia delle Entrate) */}
+      {isFatturaModalOpen && (
+        <FatturaElettronicaModal
+          cantiereId={selectedFatturaRol ? selectedFatturaRol.cantiereId : undefined}
+          preselectedRolIds={selectedFatturaRol ? [selectedFatturaRol.id] : undefined}
+          isOpen={isFatturaModalOpen}
+          onClose={() => {
+            setIsFatturaModalOpen(false);
+            setSelectedFatturaRol(null);
+          }}
         />
       )}
 

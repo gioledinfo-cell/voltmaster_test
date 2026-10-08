@@ -19,11 +19,13 @@ import {
   Tag,
   CheckCircle2,
   Boxes,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ArticoloMagazzino } from '../types';
 import { ResourceThumbnail } from './preview/ResourceThumbnail';
 import { ZonaVerdeSection } from './magazzino/ZonaVerdeSection';
+import { AggiornaListinoExcelModal } from './magazzino/AggiornaListinoExcelModal';
 import { generateUniqueId } from '../utils/idGenerator';
 
 export const MagazzinoModule: React.FC = () => {
@@ -50,6 +52,7 @@ export const MagazzinoModule: React.FC = () => {
 
   // New Article Modal
   const [isNewArticleOpen, setIsNewArticleOpen] = useState(false);
+  const [isAggiornaListinoOpen, setIsAggiornaListinoOpen] = useState(false);
   const [sku, setSku] = useState('');
   const [nome, setNome] = useState('');
   const [categoria, setCategoria] = useState<ArticoloMagazzino['categoria']>('cavi_elettrici');
@@ -166,6 +169,14 @@ export const MagazzinoModule: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          <button
+            onClick={() => setIsAggiornaListinoOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/80 text-xs font-bold rounded-lg transition-colors shadow-xs cursor-pointer"
+            title="Aggiorna i prezzi del catalogo e importa nuovi articoli dal file Excel RemaTarlazzi (foglio LISRTAXLS)"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Aggiorna Listino Prezzi da Excel</span>
+          </button>
           <button
             onClick={() => openOfflineModal('materiali')}
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-cyan-300 border border-cyan-200 dark:border-slate-700/80 text-xs font-semibold rounded-lg transition-colors shadow-xs"
@@ -891,6 +902,14 @@ export const MagazzinoModule: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal Aggiornamento Listino Prezzi da Excel (RemaTarlazzi) */}
+      {isAggiornaListinoOpen && (
+        <AggiornaListinoExcelModal
+          isOpen={isAggiornaListinoOpen}
+          onClose={() => setIsAggiornaListinoOpen(false)}
+        />
       )}
     </div>
   );

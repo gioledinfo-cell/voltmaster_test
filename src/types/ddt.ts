@@ -25,6 +25,8 @@ export interface RigaDDT {
   descrizione: string;
   unitaMisura: string;
   quantita: number;
+  valoreUnitario?: number;
+  valoreTotale?: number;
   lottoMatricola?: string;
   note?: string;
 }
@@ -33,6 +35,11 @@ export interface DocumentoDiTrasporto {
   id: string;
   numeroDdt: string;           // es. "DDT-2026/048"
   dataEmissione: string;       // YYYY-MM-DD
+  // Alias di compatibilità
+  numero?: string;
+  data?: string;
+  causale?: string;
+  articoli?: RigaDDT[];
   oraPartenza?: string;        // HH:mm
   stato: StatoDDT;
   

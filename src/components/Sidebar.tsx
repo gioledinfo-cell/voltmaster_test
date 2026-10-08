@@ -34,6 +34,8 @@ import {
   PackagePlus,
   Monitor,
   Maximize,
+  Calendar,
+  FileCode,
 } from 'lucide-react';
 import { useApp, NavigationTab } from '../context/AppContext';
 import { usePowerApps } from '../context/PowerAppsContext';
@@ -203,10 +205,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           },
           {
             tab: 'lavorazioni',
-            label: 'Pianificazione Fasi & Gantt',
-            keywords: 'lavorazioni fasi cronoprogramma gantt posa cavi quadri collaudo',
+            label: 'Pianificazione Fasi & WBS',
+            keywords: 'lavorazioni fasi cronoprogramma wbs posa cavi quadri collaudo',
             icon: CheckSquare,
             modes: ['ufficio_tecnico', 'cantiere_mobile'],
+          },
+          {
+            tab: 'gantt_squadre',
+            label: 'Gantt & Carico Squadre (PLE)',
+            keywords: 'gantt cronoprogramma carico risorse squadre ple piattaforme aeree furgoni conflitti sovrapposizione allocazioni',
+            icon: Calendar,
+            badge: 'Timeline Live',
+            badgeColor: 'text-amber-600 dark:text-amber-400 font-bold',
+            modes: ['ufficio_tecnico', 'contabilita', 'cantiere_mobile'],
           },
           {
             tab: 'mappa_gps',
@@ -358,6 +369,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             label: 'Preventivi & Computi Elettrici',
             keywords: 'preventivi offerte computo metrico quadri impianti quadro economico',
             icon: FileSpreadsheet,
+            modes: ['ufficio_tecnico', 'contabilita'],
+          },
+          {
+            tab: 'fatturazione_elettronica',
+            label: 'Fattura Elettronica XML (SDI)',
+            keywords: 'fattura elettronica xml agenzia entrate sdi ddt rol fatture ciclo attivo aliquota iva reverse charge',
+            icon: FileCode,
+            badge: 'SDI v1.8',
+            badgeColor: 'text-blue-600 dark:text-blue-400 font-mono font-bold',
             modes: ['ufficio_tecnico', 'contabilita'],
           },
         ],
