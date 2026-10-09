@@ -104,6 +104,7 @@ export type NavigationTab =
   | 'richieste_materiali'
   | 'sicurezza_cantiere'
   | 'gantt_squadre'
+  | 'giornale_lavori'
   | 'fatturazione_elettronica';
 
 export interface Toast {

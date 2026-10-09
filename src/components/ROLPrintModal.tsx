@@ -134,7 +134,7 @@ export const ROLPrintModal: React.FC<ROLPrintModalProps> = ({ rol, onClose }) =>
           </div>
 
           {/* Client and Project Meta Table */}
-          <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-md border border-slate-200 mb-5">
+          <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-md border border-slate-200 mb-4">
             <div>
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
                 Dati Committente / Cliente
@@ -185,6 +185,67 @@ export const ROLPrintModal: React.FC<ROLPrintModalProps> = ({ rol, onClose }) =>
               )}
             </div>
           </div>
+
+          {/* PARAMETRI GIORNALE DEI LAVORI: Meteo, Turno, Avanzamento */}
+          {(rol.meteo || rol.turnoOrario || rol.avanzamentoPercentuale !== undefined) && (
+            <div className="mb-4 grid grid-cols-3 gap-3 bg-slate-900 text-white p-3 rounded-md border border-slate-800">
+              {/* Meteo */}
+              <div className="border-r border-slate-700 pr-2">
+                <span className="text-[9px] uppercase tracking-wider text-amber-400 font-bold block mb-0.5">
+                  Condizioni Meteo & Cantiere
+                </span>
+                <div className="text-xs font-semibold uppercase flex items-center gap-1 text-slate-100">
+                  <span>{rol.meteo?.condizione || 'Sereno'}</span>
+                  {rol.meteo?.temperaturaMin !== undefined && (
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      ({rol.meteo.temperaturaMin}°C / {rol.meteo.temperaturaMax}°C)
+                    </span>
+                  )}
+                </div>
+                {rol.meteo?.impraticabilitaCantiere && (
+                  <span className="inline-block mt-1 text-[9px] bg-red-600 text-white font-bold px-1.5 py-0.5 rounded">
+                    ⚠️ IMPRATICABILE PER MALTEMPO
+                  </span>
+                )}
+              </div>
+
+              {/* Turno */}
+              <div className="border-r border-slate-700 px-2">
+                <span className="text-[9px] uppercase tracking-wider text-sky-400 font-bold block mb-0.5">
+                  Orario Turno & Pausa
+                </span>
+                <div className="text-xs font-mono text-slate-200 font-bold">
+                  {rol.turnoOrario ? `${rol.turnoOrario.oraInizio || '07:30'} - ${rol.turnoOrario.oraFine || '16:30'}` : '07:30 - 16:30'}
+                </div>
+                <div className="text-[10px] text-slate-400">
+                  Pausa: {rol.turnoOrario?.pausaMinuti ?? 60} min
+                </div>
+              </div>
+
+              {/* Avanzamento */}
+              <div className="pl-2">
+                <span className="text-[9px] uppercase tracking-wider text-emerald-400 font-bold block mb-0.5">
+                  Stato Avanzamento Operativo
+                </span>
+                <div className="flex items-center gap-2">
+                  <div className="text-xs font-extrabold text-emerald-300 font-mono">
+                    {rol.avanzamentoPercentuale ?? 50}%
+                  </div>
+                  <div className="flex-1 bg-slate-700 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="bg-emerald-500 h-full rounded-full"
+                      style={{ width: `${rol.avanzamentoPercentuale ?? 50}%` }}
+                    />
+                  </div>
+                </div>
+                {rol.quantitaPosata && (
+                  <div className="text-[10px] text-slate-300 mt-0.5 truncate">
+                    {rol.quantitaPosata}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Replaced parts if present */}
           {rol.partsReplaced && (
@@ -316,6 +377,66 @@ export const ROLPrintModal: React.FC<ROLPrintModalProps> = ({ rol, onClose }) =>
               </div>
             )}
           </div>
+
+          {/* Attrezzature & Mezzi Utilizzati */}
+          {rol.attrezzature && rol.attrezzature.length > 0 && (
+            <div className="mb-5">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-1 mb-2">
+                Macchinari, Mezzi & Attrezzature di Cantiere Impiegate
+              </h4>
+              <table className="w-full text-left border border-slate-200 rounded text-xs">
+                <thead>
+                  <tr className="bg-slate-100 text-slate-700 border-b border-slate-200 text-[10px]">
+                    <th className="py-1 px-2.5">Macchinario / Attrezzatura</th>
+                    <th className="py-1 px-2">Matricola / Targa</th>
+                    <th className="py-1 px-2">Operatore Abilitato</th>
+                    <th className="py-1 px-2 text-right">Ore Uso</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {rol.attrezzature.map((attr, idx) => (
+                    <tr key={idx}>
+                      <td className="py-1 px-2.5 font-medium text-slate-800">{attr.nome}</td>
+                      <td className="py-1 px-2 font-mono text-slate-600 text-[10px]">{attr.matricolaOTarga || 'N/A'}</td>
+                      <td className="py-1 px-2 text-slate-700">{rol.operatoreNome}</td>
+                      <td className="py-1 px-2 text-right font-mono font-bold text-slate-900">{attr.oreUtilizzo} h</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Imprevisti & Fermi Cantiere */}
+          {rol.imprevisti && rol.imprevisti.length > 0 && (
+            <div className="mb-5 p-3 bg-red-50/80 border border-red-200 rounded text-xs">
+              <span className="font-bold text-red-900 block mb-1 uppercase text-[10px] tracking-wider">
+                ⚠️ Imprevisti, Anomalia o Fermi Cantiere Registrati ({rol.imprevisti.reduce((sum, i) => sum + (i.oreFermo || 0), 0)} ore fermo totali)
+              </span>
+              <ul className="space-y-1 divide-y divide-red-200/60">
+                {rol.imprevisti.map((imp, idx) => (
+                  <li key={idx} className="pt-1 text-red-950 flex justify-between items-start">
+                    <div>
+                      <span className="font-bold capitalize">[{imp.causa}]:</span> {imp.descrizione}
+                    </div>
+                    <span className="font-mono font-bold text-red-800 whitespace-nowrap ml-2">
+                      -{imp.oreFermo || 0} h
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Note Sicurezza & DPI */}
+          {rol.noteSicurezza && (
+            <div className="mb-5 p-2.5 bg-amber-50/70 border border-amber-200 rounded text-xs text-amber-950">
+              <span className="font-bold text-amber-900 block mb-0.5 text-[10px] uppercase tracking-wider">
+                🛡️ Prescrizioni Sicurezza, POS/PSC & DPI Verificati:
+              </span>
+              <p className="text-[11px] leading-relaxed text-amber-900">{rol.noteSicurezza}</p>
+            </div>
+          )}
 
           {/* Signatures Section */}
           <div className="grid grid-cols-2 gap-6 pt-4 border-t-2 border-slate-300 mt-6">

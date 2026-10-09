@@ -44,9 +44,30 @@ import {
   KeyRound,
   FileCode,
   Copy,
+  Sun,
+  Cloud,
+  CloudRain,
+  CloudLightning,
+  Snowflake,
+  Wind,
+  Thermometer,
+  Activity,
+  TrendingUp,
+  AlertOctagon,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { ROL, ROLStato, ROLCollaboratore, ROLWorkType, TravelDetails } from '../types';
+import {
+  ROL,
+  ROLStato,
+  ROLCollaboratore,
+  ROLWorkType,
+  TravelDetails,
+  CondizioneMeteo,
+  ROLMeteo,
+  ROLAttrezzatura,
+  ROLImprevisto,
+  ROLTurnoOrario,
+} from '../types';
 import { SignatureModal } from './SignatureModal';
 import { ROLPrintModal } from './ROLPrintModal';
 import { ROLEmailReportModal } from './ROLEmailReportModal';
@@ -184,6 +205,7 @@ export const ROLModule: React.FC = () => {
     lavorazioni,
     magazzino,
     veicoli,
+    attrezzature,
     currentUser,
     dipendenti,
     addROL,
@@ -230,6 +252,44 @@ export const ROLModule: React.FC = () => {
   const [formActivityDescription, setFormActivityDescription] = useState<string>('');
   const [formPartsReplaced, setFormPartsReplaced] = useState<string>('');
   const [formPhotos, setFormPhotos] = useState<string[]>([]);
+
+  // GIORNALE LAVORI & PARAMETRI DI CANTIERE (Passo 1 Audit)
+  const [formTurnoInizio, setFormTurnoInizio] = useState<string>('07:30');
+  const [formTurnoFine, setFormTurnoFine] = useState<string>('16:30');
+  const [formTurnoPausa, setFormTurnoPausa] = useState<number>(60);
+  
+  const [formMeteoCondizione, setFormMeteoCondizione] = useState<CondizioneMeteo>('sereno');
+  const [formMeteoTempMin, setFormMeteoTempMin] = useState<number>(14);
+  const [formMeteoTempMax, setFormMeteoTempMax] = useState<number>(24);
+  const [formMeteoNote, setFormMeteoNote] = useState<string>('');
+  const [formMeteoImpraticabile, setFormMeteoImpraticabile] = useState<boolean>(false);
+
+  const [formAvanzamentoPercentuale, setFormAvanzamentoPercentuale] = useState<number>(50);
+  const [formQuantitaPosata, setFormQuantitaPosata] = useState<string>('');
+  
+  // Attrezzature utilizzate durante la giornata
+  const [attrezzatureAggiunte, setAttrezzatureAggiunte] = useState<ROLAttrezzatura[]>([]);
+  const [newAttrSelectedId, setNewAttrSelectedId] = useState<string>('');
+  const [newAttrNomeManual, setNewAttrNomeManual] = useState<string>('');
+  const [newAttrMatricola, setNewAttrMatricola] = useState<string>('');
+  const [newAttrOre, setNewAttrOre] = useState<number>(4);
+  const [newAttrOperatore, setNewAttrOperatore] = useState<string>(currentUser.name);
+
+  // Imprevisti e Fermi Cantiere
+  const [imprevistiAggiunti, setImprevistiAggiunti] = useState<ROLImprevisto[]>([]);
+  const [newImpDescrizione, setNewImpDescrizione] = useState<string>('');
+  const [newImpOreFermo, setNewImpOreFermo] = useState<number>(1.0);
+  const [newImpCausa, setNewImpCausa] = useState<'committenza' | 'meteo' | 'fornitore' | 'sicurezza' | 'tecnica'>('committenza');
+
+  // Sicurezza e DPI di Cantiere
+  const [formNoteSicurezza, setFormNoteSicurezza] = useState<string>(
+    'Verifica DPI anticaduta e verifica assenza di tensione prima delle lavorazioni.'
+  );
+
+  // Subappalto per la squadra
+  const [newCollabIsSubappalto, setNewCollabIsSubappalto] = useState<boolean>(false);
+  const [newCollabSubDitta, setNewCollabSubDitta] = useState<string>('EuroMontaggi Impianti S.r.l.');
+  const [newCollabSubNome, setNewCollabSubNome] = useState<string>('');
   
   // Travel state (Toggle OFF by default)
   const [formHasTravel, setFormHasTravel] = useState<boolean>(false);
@@ -332,6 +392,28 @@ export const ROLModule: React.FC = () => {
       setFormTravelKm(sourceRol.travelDetails.km || 25);
     } else {
       setFormHasTravel(false);
+    }
+
+    // Clona turno, meteo e sicurezza se presenti
+    if (sourceRol.turnoOrario) {
+      setFormTurnoInizio(sourceRol.turnoOrario.oraInizio || '07:30');
+      setFormTurnoFine(sourceRol.turnoOrario.oraFine || '16:30');
+      setFormTurnoPausa(sourceRol.turnoOrario.pausaMinuti ?? 60);
+    }
+    if (sourceRol.meteo) {
+      setFormMeteoCondizione(sourceRol.meteo.condizione || 'sereno');
+      setFormMeteoTempMin(sourceRol.meteo.temperaturaMin ?? 14);
+      setFormMeteoTempMax(sourceRol.meteo.temperaturaMax ?? 24);
+      setFormMeteoNote(sourceRol.meteo.noteMeteo || '');
+      setFormMeteoImpraticabile(sourceRol.meteo.impraticabilitaCantiere || false);
+    }
+    if (sourceRol.noteSicurezza) {
+      setFormNoteSicurezza(sourceRol.noteSicurezza);
+    }
+    if (sourceRol.attrezzature && sourceRol.attrezzature.length > 0) {
+      setAttrezzatureAggiunte(sourceRol.attrezzature.map((a) => ({ ...a, id: `attr-${Date.now()}-${Math.random()}` })));
+    } else {
+      setAttrezzatureAggiunte([]);
     }
 
     // Clona materiali ricorrenti

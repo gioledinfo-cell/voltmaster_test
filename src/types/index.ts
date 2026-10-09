@@ -219,6 +219,49 @@ export interface ROLCollaboratore {
   oreOrdinarie?: number;
   oreStraordinarie?: number;
   note?: string;
+  isSubappalto?: boolean;
+  dittaSubappalto?: string;
+}
+
+export type CondizioneMeteo =
+  | 'sereno'
+  | 'parzialmente_nuvoloso'
+  | 'coperto'
+  | 'pioggia'
+  | 'temporale'
+  | 'neve_gelo'
+  | 'vento_forte';
+
+export interface ROLMeteo {
+  condizione: CondizioneMeteo;
+  temperaturaMin?: number;
+  temperaturaMax?: number;
+  noteMeteo?: string;
+  impraticabilitaCantiere?: boolean;
+}
+
+export interface ROLAttrezzatura {
+  id: string;
+  attrezzaturaId?: string;
+  nome: string;
+  matricolaOTarga?: string;
+  oreUtilizzo: number;
+  operatoreNome?: string;
+  note?: string;
+}
+
+export interface ROLImprevisto {
+  id: string;
+  descrizione: string;
+  oreFermo?: number;
+  causa: 'committenza' | 'meteo' | 'fornitore' | 'sicurezza' | 'tecnica';
+  risolto: boolean;
+}
+
+export interface ROLTurnoOrario {
+  oraInizio?: string; // es. "07:30"
+  oraFine?: string;   // es. "16:30"
+  pausaMinuti?: number; // es. 60
 }
 
 export interface ROL {
@@ -245,6 +288,21 @@ export interface ROL {
   lavorazioneId?: string;
   lavorazioneTitolo?: string;
   attivitaLibera?: string;
+
+  // Turno Orario di Cantiere e Meteo Ambientale
+  turnoOrario?: ROLTurnoOrario;
+  meteo?: ROLMeteo;
+
+  // Stato Avanzamento Lavori Giornaliero
+  avanzamentoPercentuale?: number; // Avanzamento % stimato della lavorazione/fase (0-100)
+  quantitaPosata?: string; // es. "120m cavo FG16OR12 5G16 + 4 cuscini REI"
+
+  // Attrezzature, Mezzi & Macchinari
+  attrezzature?: ROLAttrezzatura[];
+
+  // Imprevisti, Fermi Cantiere & Sicurezza
+  imprevisti?: ROLImprevisto[];
+  noteSicurezza?: string; // DPI verificati, coordinamento interferenze, messa a terra/tensione
 
   // Ore Lavoro & Gestione Ore di Viaggio
   oreOrdinarie: number;

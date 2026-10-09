@@ -36,6 +36,7 @@ import {
   Maximize,
   Calendar,
   FileCode,
+  FileCheck,
 } from 'lucide-react';
 import { useApp, NavigationTab } from '../context/AppContext';
 import { usePowerApps } from '../context/PowerAppsContext';
@@ -209,6 +210,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             keywords: 'lavorazioni fasi cronoprogramma wbs posa cavi quadri collaudo',
             icon: CheckSquare,
             modes: ['ufficio_tecnico', 'cantiere_mobile'],
+          },
+          {
+            tab: 'giornale_lavori',
+            label: 'Giornale dei Lavori Digitale',
+            keywords: 'giornale lavori verbale capocantiere direzione lavori dl meteo maestranze foto verbale firmato dm 49 2018',
+            icon: FileCheck,
+            badge: 'Certificato DL',
+            badgeColor: 'text-amber-600 dark:text-amber-400 font-bold',
+            modes: ['ufficio_tecnico', 'contabilita', 'cantiere_mobile'],
           },
           {
             tab: 'gantt_squadre',

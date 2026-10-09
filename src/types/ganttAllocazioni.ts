@@ -67,6 +67,10 @@ export interface FaseGanttCantiere {
   cantiereId: string;
   cantiereTitolo: string;
   titoloFase: string;
+  categoriaFase?: 'opere_murarie_tracce' | 'posa_cavi_tubazioni' | 'infilaggio_attestazione' | 'montaggio_apparecchiature' | 'collaudo_certificazione';
+  salRiferimento?: string; // es. "SAL #1 — 30% Imponibile"
+  salId?: string;
+  importoFaseEuro?: number;
   dataInizio: string;
   dataFine: string;
   percentualeAvanzamento: number; // 0 - 100

@@ -1,0 +1,81 @@
+{
+  "entities": {
+    "Cantiere": {
+      "title": "Cantiere",
+      "description": "Scheda cantiere edile o stradale",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "codice": { "type": "string" },
+        "nome": { "type": "string" },
+        "indirizzo": { "type": "string" },
+        "cliente": { "type": "string" },
+        "stato": { "type": "string" },
+        "budget": { "type": "number" },
+        "avanzamentoPercentuale": { "type": "number" },
+        "dataInizio": { "type": "string" },
+        "dataFinePrevista": { "type": "string" }
+      },
+      "required": ["id", "codice", "nome"]
+    },
+    "ROL": {
+      "title": "Rapportino Opera Giornaliero",
+      "description": "Rapportino Lavoro / Giornale dei Lavori",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "cantiereId": { "type": "string" },
+        "data": { "type": "string" },
+        "capocantiereId": { "type": "string" },
+        "stato": { "type": "string" },
+        "descrizioneLavori": { "type": "string" },
+        "condizioniMeteo": { "type": "string" }
+      },
+      "required": ["id", "cantiereId", "data"]
+    },
+    "Veicolo": {
+      "title": "Veicolo/Mezzo",
+      "description": "Gestione flotta e mezzi aziendali",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "targa": { "type": "string" },
+        "modello": { "type": "string" },
+        "stato": { "type": "string" },
+        "kmAttuali": { "type": "number" }
+      },
+      "required": ["id", "targa", "modello"]
+    },
+    "Attrezzatura": {
+      "title": "Attrezzatura",
+      "description": "Attrezzatura e utensili da cantiere",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "codice": { "type": "string" },
+        "nome": { "type": "string" },
+        "stato": { "type": "string" },
+        "ubicazioneCurrenta": { "type": "string" }
+      },
+      "required": ["id", "nome"]
+    }
+  },
+  "firestore": {
+    "/cantieri/{cantiereId}": {
+      "schema": "Cantiere",
+      "description": "Collezione cantieri"
+    },
+    "/rols/{rolId}": {
+      "schema": "ROL",
+      "description": "Collezione rapportini giornalieri ROL e giornale dei lavori"
+    },
+    "/veicoli/{veicoloId}": {
+      "schema": "Veicolo",
+      "description": "Collezione mezzi di trasporto"
+    },
+    "/attrezzature/{attrezzaturaId}": {
+      "schema": "Attrezzatura",
+      "description": "Collezione attrezzature di cantiere"
+    }
+  }
+}

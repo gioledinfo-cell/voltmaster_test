@@ -45,6 +45,7 @@ import { ConfermaCaricoPaccoModal } from './components/magazzino/ConfermaCaricoP
 import { NuovoPaccoZonaVerdeModal } from './components/magazzino/NuovoPaccoZonaVerdeModal';
 import { SicurezzaCantierePanel } from './components/sicurezza/SicurezzaCantierePanel';
 import { GanttSquadreModule } from './components/gantt/GanttSquadreModule';
+import { GiornaleLavoriModule } from './components/GiornaleLavoriModule';
 import { FatturaElettronicaModal } from './components/fatturazione/FatturaElettronicaModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -146,6 +147,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ forcedTab }) => {
                 {activeTab === 'sal_cantiere' && <SalModule />}
                 {activeTab === 'ddt_trasporto' && <DdtModule />}
                 {activeTab === 'gantt_squadre' && <GanttSquadreModule />}
+                {activeTab === 'giornale_lavori' && <GiornaleLavoriModule />}
                 {activeTab === 'fatturazione_elettronica' && (
                   <FatturaElettronicaModal
                     isOpen={true}

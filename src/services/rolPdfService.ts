@@ -144,7 +144,51 @@ export function generateSingleRolPdf(
   doc.setTextColor(16, 185, 129); // emerald-600
   doc.text(`Stato Documento: ${rol.stato.toUpperCase()} · FIRMATO`, col2X + 3, y + 28);
 
-  y += boxHeight + 7;
+  y += boxHeight + 4;
+
+  // 3b. Parametri Cantiere: Meteo, Turno e Avanzamento Lavori
+  if (rol.meteo || rol.turnoOrario || rol.avanzamentoPercentuale !== undefined) {
+    doc.setFillColor(15, 23, 42); // slate-900
+    doc.setDrawColor(30, 41, 59);
+    doc.roundedRect(margin, y, contentWidth, 12, 1.5, 1.5, 'FD');
+
+    // Column 1: Meteo
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(251, 191, 36); // amber-400
+    doc.text('METEO & CANTIERE', margin + 3, y + 4);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(255, 255, 255);
+    const meteoStr = `${rol.meteo?.condizione?.toUpperCase() || 'SERENO'}${rol.meteo?.temperaturaMin !== undefined ? ` (${rol.meteo.temperaturaMin}°C/${rol.meteo.temperaturaMax}°C)` : ''}`;
+    doc.text(meteoStr, margin + 3, y + 8.5);
+
+    // Column 2: Turno
+    const c2X = margin + 65;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(56, 189, 248); // sky-400
+    doc.text('TURNO & PAUSA', c2X, y + 4);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(255, 255, 255);
+    const turnoStr = `${rol.turnoOrario ? `${rol.turnoOrario.oraInizio || '07:30'}-${rol.turnoOrario.oraFine || '16:30'}` : '07:30-16:30'} (pausa ${rol.turnoOrario?.pausaMinuti ?? 60}m)`;
+    doc.text(turnoStr, c2X, y + 8.5);
+
+    // Column 3: Avanzamento
+    const c3X = margin + 130;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(52, 211, 153); // emerald-400
+    doc.text('AVANZAMENTO OPERATIVO', c3X, y + 4);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(255, 255, 255);
+    const avanzStr = `${rol.avanzamentoPercentuale ?? 50}% completato${rol.quantitaPosata ? ` · ${rol.quantitaPosata}` : ''}`;
+    doc.text(avanzStr, c3X, y + 8.5, { maxWidth: contentWidth - 133 });
+
+    y += 16;
+  }
 
   // 4. Descrizione Lavori Eseguiti
   doc.setFillColor(241, 245, 249);
@@ -390,6 +434,67 @@ export function generateSingleRolPdf(
     y += squadBoxH + 4;
   } else {
     y += 2;
+  }
+
+  // 6b. Attrezzature, Imprevisti & Sicurezza
+  if (rol.attrezzature && rol.attrezzature.length > 0) {
+    doc.setFillColor(241, 245, 249);
+    doc.rect(margin, y, contentWidth, 5, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text('3b. MACCHINARI & ATTREZZATURE UTILIZZATE', margin + 3, y + 3.5);
+    y += 6;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(30, 41, 59);
+    rol.attrezzature.forEach((attr) => {
+      doc.text(
+        `• ${attr.nome} (${attr.matricolaOTarga || 'Senza matricola'}) — Operatore: ${rol.operatoreNome} — Ore uso: ${attr.oreUtilizzo}h`,
+        margin + 4,
+        y
+      );
+      y += 4;
+    });
+    y += 2;
+  }
+
+  if (rol.imprevisti && rol.imprevisti.length > 0) {
+    doc.setFillColor(254, 242, 242); // red-50
+    doc.setDrawColor(254, 202, 202);
+    const impH = 7 + rol.imprevisti.length * 4;
+    doc.roundedRect(margin, y, contentWidth, impH, 1, 1, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(153, 27, 27); // red-800
+    doc.text('ANOMALIE & FERMI CANTIERE REGISTRATI:', margin + 3, y + 4);
+
+    let impY = y + 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    rol.imprevisti.forEach((imp) => {
+      doc.text(`• [${imp.causa.toUpperCase()}] ${imp.descrizione} (${imp.oreFermo}h fermo)`, margin + 5, impY, {
+        maxWidth: contentWidth - 10,
+      });
+      impY += 4;
+    });
+    y += impH + 3;
+  }
+
+  if (rol.noteSicurezza) {
+    doc.setFillColor(254, 252, 232); // yellow-50
+    doc.setDrawColor(254, 240, 138);
+    const secLines = doc.splitTextToSize(`Sicurezza & DPI: ${rol.noteSicurezza}`, contentWidth - 6);
+    const secH = Math.max(8, secLines.length * 3.5 + 4);
+    doc.roundedRect(margin, y, contentWidth, secH, 1, 1, 'FD');
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(113, 63, 18);
+    doc.text(secLines, margin + 3, y + 4);
+    y += secH + 3;
   }
 
   // 7. Sezione Firme Grafometriche (Tecnico & Committente)
