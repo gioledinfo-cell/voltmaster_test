@@ -23,6 +23,7 @@ import { useApp } from '../context/AppContext';
 import { Preventivo, PreventivoStato } from '../types';
 import { PreventivoPrintModal } from './PreventivoPrintModal';
 import { CreateQuoteModal } from './CreateQuoteModal';
+import { ImportComputoModal } from './computo/ImportComputoModal';
 import {
   downloadPreventivoPdf,
   printPreventivoPdfDirectly,
@@ -46,6 +47,7 @@ export const PreventiviModule: React.FC = () => {
 
   const [selectedPrevId, setSelectedPrevId] = useState<string>(preventivi[0]?.id || '');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportComputoOpen, setIsImportComputoOpen] = useState(false);
   const [editingPreventivo, setEditingPreventivo] = useState<Preventivo | null>(null);
   const [printModalPrev, setPrintModalPrev] = useState<Preventivo | null>(null);
 
@@ -98,13 +100,22 @@ export const PreventiviModule: React.FC = () => {
         </div>
 
         {currentUser.role !== 'operatore' && currentUser.role !== 'cliente' && (
-          <button
-            onClick={handleOpenNewModal}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl transition-all shadow-md shadow-amber-500/20 self-start sm:self-auto cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nuovo Preventivo Modulare</span>
-          </button>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              onClick={() => setIsImportComputoOpen(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-amber-400 text-xs font-bold rounded-xl transition-all border border-amber-500/30 shadow-md cursor-pointer"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-amber-400" />
+              <span>Importa Computo (.xpwe / Excel)</span>
+            </button>
+            <button
+              onClick={handleOpenNewModal}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl transition-all shadow-md shadow-amber-500/20 self-start sm:self-auto cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Nuovo Preventivo Modulare</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -638,6 +649,16 @@ export const PreventiviModule: React.FC = () => {
           onClose={() => setPrintModalPrev(null)}
         />
       )}
+
+      {/* IMPORT COMPUTO METRICO MODAL (.xpwe / Excel) */}
+      <ImportComputoModal
+        isOpen={isImportComputoOpen}
+        onClose={() => setIsImportComputoOpen(false)}
+        onImportToPreventivo={(payload) => {
+          handleSavePreventivo(payload);
+          setIsImportComputoOpen(false);
+        }}
+      />
     </div>
   );
 };

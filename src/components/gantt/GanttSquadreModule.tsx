@@ -21,6 +21,7 @@ import {
   Layers,
   Sparkles,
   Info,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -35,6 +36,7 @@ import {
   ASSET_GANTT_DISPONIBILI,
   detectResourceConflicts,
 } from '../../services/ganttAllocazioniService';
+import { ImportComputoModal } from '../computo/ImportComputoModal';
 
 export const GanttSquadreModule: React.FC = () => {
   const { cantieri, dipendenti, veicoli, showToast } = useApp();
@@ -43,6 +45,7 @@ export const GanttSquadreModule: React.FC = () => {
   const [fasi, setFasi] = useState<FaseGanttCantiere[]>(INITIAL_FASI_GANTT);
   const [allocazioni, setAllocazioni] = useState<AllocazioneRisorsa[]>(INITIAL_ALLOCAZIONI);
   const [selectedCantiereId, setSelectedCantiereId] = useState<string>('tutti');
+  const [isImportComputoOpen, setIsImportComputoOpen] = useState(false);
   const [filterTipoRisorsa, setFilterTipoRisorsa] = useState<'tutte' | TipoRisorsaGantt>('tutte');
   const [timeZoom, setTimeZoom] = useState<'settimana' | 'mese'>('settimana');
   const [searchQuery, setSearchQuery] = useState('');
@@ -256,8 +259,16 @@ export const GanttSquadreModule: React.FC = () => {
         <div className="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
           <button
             type="button"
+            onClick={() => setIsImportComputoOpen(true)}
+            className="px-3.5 py-2 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-amber-400 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-amber-500/30 shadow-xs transition-all active:scale-95 cursor-pointer"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-amber-400" />
+            <span>Importa Fasi da Computo (.xpwe / Excel)</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setIsNewAllocModalOpen(true)}
-            className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+            className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Nuova Allocazione Risorsa</span>
@@ -772,6 +783,18 @@ export const GanttSquadreModule: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* IMPORT COMPUTO METRICO MODAL (.xpwe / Excel) */}
+      <ImportComputoModal
+        isOpen={isImportComputoOpen}
+        onClose={() => setIsImportComputoOpen(false)}
+        targetCantiereId={selectedCantiereId !== 'tutti' ? selectedCantiereId : cantieri[0]?.id}
+        onImportToGanttFasi={(nuoveFasi) => {
+          setFasi((prev) => [...nuoveFasi, ...prev]);
+          showToast(`✅ ${nuoveFasi.length} fasi di cantiere importate con successo dal computo metrico!`, 'success');
+          setIsImportComputoOpen(false);
+        }}
+      />
     </div>
   );
 };

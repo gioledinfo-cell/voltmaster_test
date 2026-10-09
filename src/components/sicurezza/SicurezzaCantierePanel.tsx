@@ -61,6 +61,63 @@ export const SicurezzaCantierePanel: React.FC<SicurezzaCantierePanelProps> = ({
 
   const [filtroTipoDoc, setFiltroTipoDoc] = useState<string>('tutti');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isSubappaltoModalOpen, setIsSubappaltoModalOpen] = useState(false);
+
+  // GDPR & D.Lgs. 81/08: Segregazione dati sanitari (RSPP / Medico Competente)
+  const [isRsppSimulationActive, setIsRsppSimulationActive] = useState<boolean>(() => {
+    return currentUser.role === 'amministratore' || (currentUser.role as string).toLowerCase().includes('rspp');
+  });
+
+  // Modulo Subappalti & Qualifica Ditte Esterne (DURC 120 giorni ex Art. 90 D.Lgs. 81/08)
+  const [subappaltatori, setSubappaltatori] = useState([
+    {
+      id: 'SUB-01',
+      ragioneSociale: 'Edilstrutture Milanesi S.r.l.',
+      partitaIva: '08129480153',
+      lavorazione: 'Opere murarie, tracce, carotaggi e forometrie',
+      protocolloDurc: 'INAIL_42819033',
+      dataRilascioDurc: '2026-08-15',
+      dataScadenzaDurc: '2026-12-13', // 120 giorni
+      posApprovato: true,
+      visuraCamerale: true,
+      organicoMedio: 8,
+      referente: 'Ing. M. Bellini (335 1294812)',
+    },
+    {
+      id: 'SUB-02',
+      ragioneSociale: 'Clima & Reti Impianti S.n.c.',
+      partitaIva: '04910280158',
+      lavorazione: 'Canalizzazioni aria e impianti di climatizzazione VRF',
+      protocolloDurc: 'INPS_39012481',
+      dataRilascioDurc: '2026-06-01',
+      dataScadenzaDurc: '2026-09-29', // Scaduto
+      posApprovato: true,
+      visuraCamerale: true,
+      organicoMedio: 4,
+      referente: 'P.I. L. Ferri (347 9821034)',
+    },
+    {
+      id: 'SUB-03',
+      ragioneSociale: 'SicurData Cablaggi Speciali S.r.l.',
+      partitaIva: '09381020150',
+      lavorazione: 'Posa fibra ottica e collaudo certificato OTDR',
+      protocolloDurc: 'INAIL_43901249',
+      dataRilascioDurc: '2026-09-10',
+      dataScadenzaDurc: '2027-01-08',
+      posApprovato: false, // In attesa di approvazione dal CSE
+      visuraCamerale: true,
+      organicoMedio: 6,
+      referente: 'Sig. R. Marchesi (338 5541290)',
+    },
+  ]);
+
+  // Form nuovo subappalto
+  const [subRagione, setSubRagione] = useState('');
+  const [subPiva, setSubPiva] = useState('');
+  const [subLavorazione, setSubLavorazione] = useState('');
+  const [subProtocollo, setSubProtocollo] = useState('');
+  const [subRilascio, setSubRilascio] = useState(new Date().toISOString().split('T')[0]);
+  const [subReferente, setSubReferente] = useState('');
 
   // Form nuovo documento
   const [nuovoTipo, setNuovoTipo] = useState<string>('DURC_SUBAPPALTO');
@@ -269,34 +326,58 @@ export const SicurezzaCantierePanel: React.FC<SicurezzaCantierePanelProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => {
-                const blockedOp = operatoriCantiere.find((o) => o.bloccatoIngresso) || registroOperatori.find((o) => o.bloccatoIngresso);
-                if (blockedOp) {
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Toggle Privacy Sanitaria GDPR */}
+              <button
+                type="button"
+                onClick={() => {
+                  const nextState = !isRsppSimulationActive;
+                  setIsRsppSimulationActive(nextState);
                   showToast(
-                    `🚨 TEST BLOCCO D.LGS 81/08 ATTIVO: Tentativo di timbratura per ${blockedOp.nomeCompleto} bloccato! Visita medica scaduta (${blockedOp.visitaMedicaScadenza}). Accesso al cantiere non consentito.`,
-                    'error'
-                  );
-                } else {
-                  showToast(
-                    'Tutti i lavoratori attualmente assegnati a questa commessa risultano idonei e in regola.',
+                    nextState
+                      ? 'Modalità RSPP / Medico Competente abilitata: consultazione dettagli sanitari autorizzata.'
+                      : 'Modalità Preposto attiva: dati sanitari mascherati ai sensi dell\'Art. 9 GDPR.',
                     'info'
                   );
-                }
-              }}
-              className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
-              title="Testa il blocco di sicurezza automatico in tempo reale"
-            >
-              <ShieldAlert className="w-4 h-4 text-rose-500" />
-              <span>Testa Blocco Timbratura Lavoratore</span>
-            </button>
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border ${
+                  isRsppSimulationActive
+                    ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                }`}
+                title="Attiva/disattiva la vista privilegiata RSPP/Medico per il trattamento dei dati sanitari"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>{isRsppSimulationActive ? 'Vista RSPP / Medico (Dati Visibili)' : 'Vista Preposto (GDPR Mascherato)'}</span>
+              </button>
 
-            <div className="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl">
-              Sorveglianza Sanitaria: <strong>Dott.ssa M. Grassi</strong>
+              <button
+                type="button"
+                onClick={() => {
+                  const blockedOp = operatoriCantiere.find((o) => o.bloccatoIngresso) || registroOperatori.find((o) => o.bloccatoIngresso);
+                  if (blockedOp) {
+                    showToast(
+                      `🚨 TEST BLOCCO D.LGS 81/08 ATTIVO: Tentativo di timbratura per ${blockedOp.nomeCompleto} bloccato! Visita medica scaduta (${blockedOp.visitaMedicaScadenza}). Accesso al cantiere non consentito.`,
+                      'error'
+                    );
+                  } else {
+                    showToast(
+                      'Tutti i lavoratori attualmente assegnati a questa commessa risultano idonei e in regola.',
+                      'info'
+                    );
+                  }
+                }}
+                className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+                title="Testa il blocco di sicurezza automatico in tempo reale"
+              >
+                <ShieldAlert className="w-4 h-4 text-rose-500" />
+                <span>Testa Blocco Timbratura Lavoratore</span>
+              </button>
+
+              <div className="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl">
+                Sorveglianza Sanitaria: <strong>Dott.ssa M. Grassi</strong>
+              </div>
             </div>
-          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -342,29 +423,43 @@ export const SicurezzaCantierePanel: React.FC<SicurezzaCantierePanelProps> = ({
                         <span className="font-medium text-slate-800 dark:text-slate-200">{op.ruoloAziendale}</span>
                       </td>
 
-                      {/* Visita Medica */}
+                      {/* Visita Medica - Con Segregazione GDPR ex Art. 9 Reg. UE 2016/679 */}
                       <td className="py-3 px-3">
-                        <div className="flex items-center gap-1.5">
-                          <Stethoscope className="w-3.5 h-3.5 text-slate-400" />
-                          <span className={`font-mono font-bold ${
-                            op.giorniAllaScadenza < 0
-                              ? 'text-rose-600 dark:text-rose-400'
-                              : op.giorniAllaScadenza <= 30
-                              ? 'text-amber-600 dark:text-amber-400'
-                              : 'text-slate-800 dark:text-slate-200'
-                          }`}>
-                            {op.visitaMedicaScadenza}
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-slate-500 mt-0.5">
-                          {op.giorniAllaScadenza < 0 ? (
-                            <span className="text-rose-600 font-bold">SCADUTA DA {Math.abs(op.giorniAllaScadenza)} GG</span>
-                          ) : op.giorniAllaScadenza <= 30 ? (
-                            <span className="text-amber-600 font-semibold">In scadenza tra {op.giorniAllaScadenza} gg</span>
-                          ) : (
-                            <span className="text-emerald-600">Idoneità valida ({op.giorniAllaScadenza} gg)</span>
-                          )}
-                        </div>
+                        {isRsppSimulationActive ? (
+                          <>
+                            <div className="flex items-center gap-1.5">
+                              <Stethoscope className="w-3.5 h-3.5 text-slate-400" />
+                              <span className={`font-mono font-bold ${
+                                op.giorniAllaScadenza < 0
+                                  ? 'text-rose-600 dark:text-rose-400'
+                                  : op.giorniAllaScadenza <= 30
+                                  ? 'text-amber-600 dark:text-amber-400'
+                                  : 'text-slate-800 dark:text-slate-200'
+                              }`}>
+                                {op.visitaMedicaScadenza}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-500 mt-0.5">
+                              {op.giorniAllaScadenza < 0 ? (
+                                <span className="text-rose-600 font-bold">SCADUTA DA {Math.abs(op.giorniAllaScadenza)} GG</span>
+                              ) : op.giorniAllaScadenza <= 30 ? (
+                                <span className="text-amber-600 font-semibold">In scadenza tra {op.giorniAllaScadenza} gg</span>
+                              ) : (
+                                <span className="text-emerald-600">Idoneità valida ({op.giorniAllaScadenza} gg)</span>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="space-y-0.5">
+                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
+                              <Lock className="w-3 h-3 text-purple-500 shrink-0" />
+                              <span>DATI SANITARI RISERVATI</span>
+                            </div>
+                            <div className="text-[9px] text-slate-400 italic">
+                              Art. 9 GDPR · Visibili solo a RSPP / Medico
+                            </div>
+                          </div>
+                        )}
                       </td>
 
                       {/* Patentini */}
@@ -395,7 +490,7 @@ export const SicurezzaCantierePanel: React.FC<SicurezzaCantierePanelProps> = ({
                               <span>ACCESSO BLOCCATO</span>
                             </span>
                             <div className="text-[9px] text-rose-600 dark:text-rose-400 max-w-xs leading-tight">
-                              {op.motivoBlocco}
+                              {isRsppSimulationActive ? op.motivoBlocco : 'Blocco per prescrizioni di sicurezza (Art. 41 D.Lgs 81/08)'}
                             </div>
                           </div>
                         ) : op.giorniAllaScadenza <= 30 ? (
@@ -414,6 +509,176 @@ export const SicurezzaCantierePanel: React.FC<SicurezzaCantierePanelProps> = ({
                   );
                 })
               )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* SEZIONE 2: SCRIVANIA SUBAPPALTATORI & QUALIFICA FORNITORI (DURC 120 GG - ART. 90 D.LGS. 81/08) */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-indigo-500" />
+                <span>Qualifica Subappaltatori & Verifica DURC 120 Giorni (Art. 90 D.Lgs 81/08)</span>
+              </h2>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
+                {subappaltatori.length} Imprese
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Controllo idoneità tecnico-professionale delle ditte terze. Il cancello si blocca se il DURC è scaduto o il P.O.S. non è approvato dal CSE.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsSubappaltoModalOpen(true)}
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Aggiungi Ditta Subappalto</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold">
+                <th className="py-2.5 px-3">Impresa Subappaltatrice / P.IVA</th>
+                <th className="py-2.5 px-3">Lavorazione Affidata</th>
+                <th className="py-2.5 px-3">DURC On-Line (Protocollo & Scadenza 120gg)</th>
+                <th className="py-2.5 px-3">P.O.S. di Subappalto</th>
+                <th className="py-2.5 px-3">Semaforo Accesso Cancello</th>
+                <th className="py-2.5 px-3 text-right">Azioni</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {subappaltatori.map((sub) => {
+                const oggi = new Date();
+                const scad = new Date(sub.dataScadenzaDurc);
+                const diffDays = Math.ceil((scad.getTime() - oggi.getTime()) / (1000 * 60 * 60 * 24));
+                const isDurcScaduto = diffDays <= 0;
+                const isDurcInScadenza = diffDays > 0 && diffDays <= 15;
+                const isBloccato = isDurcScaduto || !sub.posApprovato;
+
+                return (
+                  <tr
+                    key={sub.id}
+                    className={`hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors ${
+                      isBloccato ? 'bg-rose-500/5' : ''
+                    }`}
+                  >
+                    {/* Ditta */}
+                    <td className="py-3 px-3">
+                      <div className="font-bold text-slate-900 dark:text-slate-100">{sub.ragioneSociale}</div>
+                      <div className="font-mono text-[10px] text-slate-400">P.IVA: {sub.partitaIva}</div>
+                      <div className="text-[10px] text-slate-500">{sub.referente}</div>
+                    </td>
+
+                    {/* Lavorazione */}
+                    <td className="py-3 px-3">
+                      <span className="font-medium text-slate-800 dark:text-slate-200">{sub.lavorazione}</span>
+                      <div className="text-[10px] text-slate-500">Organico medio: {sub.organicoMedio} operai</div>
+                    </td>
+
+                    {/* DURC */}
+                    <td className="py-3 px-3">
+                      <div className="font-mono font-bold text-slate-800 dark:text-slate-200">{sub.protocolloDurc}</div>
+                      <div className="text-[10px] text-slate-500">Rilascio: {sub.dataRilascioDurc}</div>
+                      <div className="mt-0.5">
+                        {isDurcScaduto ? (
+                          <span className="font-bold text-rose-600 dark:text-rose-400">
+                            SCADUTO IL {sub.dataScadenzaDurc} ({Math.abs(diffDays)} gg fa)
+                          </span>
+                        ) : isDurcInScadenza ? (
+                          <span className="font-semibold text-amber-600 dark:text-amber-400">
+                            Scadenza {sub.dataScadenzaDurc} (tra {diffDays} gg)
+                          </span>
+                        ) : (
+                          <span className="text-emerald-600 font-medium">
+                            Valido fino al {sub.dataScadenzaDurc} ({diffDays} gg residui)
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* POS */}
+                    <td className="py-3 px-3">
+                      {sub.posApprovato ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          <span>P.O.S. APPROVATO CSE</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
+                          <XCircle className="w-3 h-3 text-rose-600" />
+                          <span>P.O.S. DA APPROVARE</span>
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Semaforo Accesso */}
+                    <td className="py-3 px-3">
+                      {isBloccato ? (
+                        <div className="space-y-0.5">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-800 dark:text-rose-300 border border-rose-500/40">
+                            <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
+                            <span>ACCESSO INTERDETTO</span>
+                          </span>
+                          <div className="text-[9px] text-rose-600 font-medium">
+                            {isDurcScaduto ? 'DURC scaduto ex Art. 90' : 'Manca validazione POS'}
+                          </div>
+                        </div>
+                      ) : isDurcInScadenza ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/40">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                          <span>AUTORIZZATO (PRE-ALLERTA)</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>AUTORIZZATO AL CANCELLO</span>
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Azioni */}
+                    <td className="py-3 px-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nuovaScad = new Date();
+                          nuovaScad.setDate(nuovaScad.getDate() + 120);
+                          const nuovaScadStr = nuovaScad.toISOString().split('T')[0];
+                          const nuovoRilascio = new Date().toISOString().split('T')[0];
+                          
+                          setSubappaltatori(prev => prev.map(s => {
+                            if (s.id === sub.id) {
+                              return {
+                                ...s,
+                                dataRilascioDurc: nuovoRilascio,
+                                dataScadenzaDurc: nuovaScadStr,
+                                protocolloDurc: `INAIL_${Math.floor(40000000 + Math.random() * 9999999)}`,
+                                posApprovato: true,
+                              };
+                            }
+                            return s;
+                          }));
+
+                          showToast(`DURC per ${sub.ragioneSociale} rinnovato con successo per 120 giorni! Cancello sbloccato.`, 'success');
+                        }}
+                        className="px-2.5 py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg transition-colors"
+                      >
+                        Rinnova DURC (+120gg)
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -614,6 +879,173 @@ export const SicurezzaCantierePanel: React.FC<SicurezzaCantierePanelProps> = ({
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-md"
                 >
                   Registra Agli Atti
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL AGGIUNGI IMPRESA SUBAPPALTO & DURC 120GG */}
+      {isSubappaltoModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-indigo-500" />
+                <span>Qualifica Subappaltatore & Registrazione DURC (Art. 90)</span>
+              </h3>
+              <button
+                onClick={() => setIsSubappaltoModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!subRagione || !subPiva) {
+                  showToast('Ragione sociale e P.IVA obbligatorie', 'error');
+                  return;
+                }
+
+                const rilascioDate = new Date(subRilascio);
+                const scadenzaDate = new Date(rilascioDate);
+                scadenzaDate.setDate(scadenzaDate.getDate() + 120);
+
+                const nuovaDitta = {
+                  id: `SUB-${Date.now().toString(36).toUpperCase()}`,
+                  ragioneSociale: subRagione,
+                  partitaIva: subPiva,
+                  lavorazione: subLavorazione || 'Lavorazioni specialistiche impiantistiche',
+                  protocolloDurc: subProtocollo || `INAIL_${Math.floor(40000000 + Math.random() * 9999999)}`,
+                  dataRilascioDurc: subRilascio,
+                  dataScadenzaDurc: scadenzaDate.toISOString().split('T')[0],
+                  posApprovato: true,
+                  visuraCamerale: true,
+                  organicoMedio: 5,
+                  referente: subReferente || 'Ufficio Tecnico (02 998877)',
+                };
+
+                setSubappaltatori(prev => [nuovaDitta, ...prev]);
+                setIsSubappaltoModalOpen(false);
+                setSubRagione('');
+                setSubPiva('');
+                setSubLavorazione('');
+                setSubProtocollo('');
+                setSubReferente('');
+                showToast(`Impresa ${subRagione} qualificata con DURC valido per 120 giorni!`, 'success');
+              }}
+              className="space-y-3 text-xs"
+            >
+              <div>
+                <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">
+                  Ragione Sociale Impresa Subappaltatrice *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="es. ElettroTermica Brianza S.r.l."
+                  value={subRagione}
+                  onChange={(e) => setSubRagione(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">
+                    Partita IVA / Codice Fiscale *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="es. 08912340156"
+                    value={subPiva}
+                    onChange={(e) => setSubPiva(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">
+                    Protocollo DURC On-Line
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. INAIL_42918401"
+                    value={subProtocollo}
+                    onChange={(e) => setSubProtocollo(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">
+                  Lavorazione Affidata in Subappalto
+                </label>
+                <input
+                  type="text"
+                  placeholder="es. Posa canalizzazioni, infilaggio cavi speciali e blindosbarre"
+                  value={subLavorazione}
+                  onChange={(e) => setSubLavorazione(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">
+                    Data Rilascio DURC (Inizio 120gg)
+                  </label>
+                  <input
+                    type="date"
+                    value={subRilascio}
+                    onChange={(e) => setSubRilascio(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">
+                    Referente / Recapito Telefonico
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. Geom. Rossi (340 1234567)"
+                    value={subReferente}
+                    onChange={(e) => setSubReferente(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl border border-indigo-200 dark:border-indigo-800 text-[11px] text-indigo-800 dark:text-indigo-300 space-y-1">
+                <div className="font-bold flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Verifica di Idoneità Tecnico-Professionale Automatica</span>
+                </div>
+                <p>
+                  La scadenza viene calcolata a 120 giorni solari dalla data di rilascio. In caso di superamento dei termini, l'accesso al cantiere dei lavoratori della ditta verrà interdetto al cancello.
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSubappaltoModalOpen(false)}
+                  className="px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold"
+                >
+                  Annulla
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-md"
+                >
+                  Registra Subappaltatore
                 </button>
               </div>
             </form>

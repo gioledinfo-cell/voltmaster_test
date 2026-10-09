@@ -12,6 +12,7 @@ import {
   ArrowRight,
   HelpCircle,
   Search,
+  FileSpreadsheet,
 } from 'lucide-react';
 import {
   Preventivo,
@@ -21,6 +22,7 @@ import {
   VoceManodoperaPreventivo,
   VocePreventivo,
 } from '../types';
+import { ImportComputoModal } from './computo/ImportComputoModal';
 
 interface CreateQuoteModalProps {
   isOpen: boolean;
@@ -69,6 +71,7 @@ export const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
   );
   const [aliquotaIvaCustom, setAliquotaIvaCustom] = useState<string>('');
   const [isCustomIva, setIsCustomIva] = useState<boolean>(false);
+  const [isImportComputoOpen, setIsImportComputoOpen] = useState<boolean>(false);
 
   // 1. Sezione Materiali
   const [materiali, setMateriali] = useState<VoceMaterialePreventivo[]>(() => {
@@ -479,12 +482,23 @@ export const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsImportComputoOpen(true)}
+              className="px-3 py-1.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-amber-400 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-amber-500/30 transition-all cursor-pointer shadow-xs"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-amber-400" />
+              <span className="hidden sm:inline">Importa Computo (.xpwe / Excel)</span>
+              <span className="sm:hidden">Importa</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Form Body Scrollable */}
@@ -1122,6 +1136,23 @@ export const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
           </div>
         </form>
       </div>
+
+      {/* IMPORT COMPUTO METRICO MODAL (.xpwe / Excel) */}
+      <ImportComputoModal
+        isOpen={isImportComputoOpen}
+        onClose={() => setIsImportComputoOpen(false)}
+        onImportToPreventivo={(payload) => {
+          if (payload.materiali && payload.materiali.length > 0) {
+            setMateriali(payload.materiali);
+          }
+          if (payload.manodopera && payload.manodopera.length > 0) {
+            setManodopera(payload.manodopera);
+          }
+          if (payload.oggetto) setOggetto(payload.oggetto);
+          if (payload.note) setNote(payload.note);
+          setIsImportComputoOpen(false);
+        }}
+      />
     </div>
   );
 };

@@ -171,6 +171,10 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
     savedPercent: number;
   } | null>(null);
 
+  // Collaudo Campo: Simulazione Schermo Mobile (360px - 390px - Full) & Blocco Sicurezza D.Lgs 81/08
+  const [viewportSimulation, setViewportSimulation] = useState<'full' | '360px' | '390px'>('full');
+  const [isSimulazioneBloccoSicurezza, setIsSimulazioneBloccoSicurezza] = useState<boolean>(false);
+
   // Esegui geofencing GPS (reale o simulato per test)
   const runGpsGeofencing = async (customCoords?: { latitude: number; longitude: number; label?: string }) => {
     setIsLocatingGps(true);
@@ -413,7 +417,18 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
       return;
     }
 
-    // 1. Controllo di Idoneità Sanitaria e Sicurezza Cantiere D.Lgs 81/08
+    // 1. Controllo di Idoneità Sanitaria e Sicurezza Cantiere D.Lgs 81/08 (Reale o Simulato per Collaudo)
+    if (isSimulazioneBloccoSicurezza) {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate([100, 80, 100, 80, 200]);
+      }
+      showToast(
+        '🚨 BLOCCO SICUREZZA D.LGS 81/08 ATTIVO: Accesso al cantiere interdetto per sospensione sanitaria o tesserino non idoneo. Invio del ROL bloccato a norma di legge.',
+        'error'
+      );
+      return;
+    }
+
     const currentDip = dipendenti.find((d) => d.id === currentUser.id || d.email === currentUser.email);
     if (currentDip && currentDip.visitaMedicaScadenza) {
       const scadenza = new Date(currentDip.visitaMedicaScadenza);
@@ -542,42 +557,161 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4 pb-16">
-      {/* Hidden file input for camera */}
-      <input
-        type="file"
-        ref={mobileFileInputRef}
-        accept="image/*"
-        capture="environment"
-        multiple
-        className="hidden"
-        onChange={handleMobilePhotoUpload}
-      />
+    <div className="space-y-4 pb-16">
+      {/* Collaudo Campo & QA Simulator Bar: 360px - 390px Viewport & Blocco Sicurezza */}
+      <div className="max-w-3xl mx-auto p-3 bg-slate-900 text-white rounded-2xl border border-slate-800 shadow-xl space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <Smartphone className="w-4 h-4 text-amber-400" />
+            <span className="text-xs font-black tracking-tight">
+              Collaudo Campo & Risoluzione Mobile
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+              {viewportSimulation === '360px' ? '360px (Galaxy S8 / SE)' : viewportSimulation === '390px' ? '390px (iPhone 14/15)' : 'Schermo Intero'}
+            </span>
+          </div>
 
-      {/* Network & Offline Status Banner */}
-      <div
-        className={`px-4 py-2.5 rounded-xl border flex items-center justify-between text-xs transition-colors ${
-          network.isOnline
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800/60 dark:text-emerald-300'
-            : 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/60 dark:border-rose-800 dark:text-rose-300 animate-pulse'
-        }`}
-      >
-        <div className="flex items-center gap-2">
-          {network.isOnline ? (
-            <Wifi className="w-4 h-4 text-emerald-500 shrink-0" />
-          ) : (
-            <WifiOff className="w-4 h-4 text-rose-500 shrink-0" />
-          )}
-          <span>
-            {network.isOnline
-              ? 'Connessione Dati Attiva · Sincronizzazione ROL & Cantiere in tempo reale'
-              : 'Dispositivo Offline · Il ROL verrà salvato localmente e inviato appena torna la rete'}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] uppercase font-bold text-slate-400 mr-1">Risoluzione:</span>
+            <button
+              type="button"
+              onClick={() => setViewportSimulation('360px')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                viewportSimulation === '360px'
+                  ? 'bg-amber-500 text-slate-950 shadow-md'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              }`}
+            >
+              📱 360px
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewportSimulation('390px')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                viewportSimulation === '390px'
+                  ? 'bg-amber-500 text-slate-950 shadow-md'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              }`}
+            >
+              📱 390px
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewportSimulation('full')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                viewportSimulation === 'full'
+                  ? 'bg-amber-500 text-slate-950 shadow-md'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              }`}
+            >
+              💻 Schermo Fluido
+            </button>
+          </div>
+        </div>
+
+        {/* Toggle Simulazione Blocco Sicurezza */}
+        <div className="pt-2 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className={`w-4 h-4 ${isSimulazioneBloccoSicurezza ? 'text-rose-400 animate-pulse' : 'text-slate-400'}`} />
+            <span className="text-[11px] text-slate-300">
+              Test D.Lgs. 81/08:
+            </span>
+            <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
+              isSimulazioneBloccoSicurezza ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+            }`}>
+              {isSimulazioneBloccoSicurezza ? '🚨 BLOCCO ATTIVO (Visita Medica Scaduta)' : '✅ OPERATORE IDONEO'}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const next = !isSimulazioneBloccoSicurezza;
+              setIsSimulazioneBloccoSicurezza(next);
+              showToast(
+                next
+                  ? '🚨 Simulazione Blocco Sicurezza ATTIVATA: Idoneità medica scaduta ex D.Lgs. 81/08.'
+                  : '✅ Simulazione Blocco Sicurezza DISATTIVATA: Operatore pienamente idoneo.',
+                next ? 'error' : 'success'
+              );
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+              isSimulazioneBloccoSicurezza
+                ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+            }`}
+          >
+            {isSimulazioneBloccoSicurezza ? '🔓 Sblocca Operatore (Ripristina Idoneità)' : '🚨 Simula Blocco Sicurezza (Non Idoneo)'}
+          </button>
+        </div>
+      </div>
+
+      {/* Frame Container per Test Viewport (360px / 390px / Full) */}
+      <div className={`transition-all duration-300 ${
+        viewportSimulation === '360px'
+          ? 'max-w-[360px] mx-auto border-4 border-slate-800 dark:border-slate-700 rounded-[32px] p-2.5 shadow-2xl bg-white dark:bg-slate-950 ring-8 ring-slate-900/40 my-2'
+          : viewportSimulation === '390px'
+          ? 'max-w-[390px] mx-auto border-4 border-slate-800 dark:border-slate-700 rounded-[32px] p-2.5 shadow-2xl bg-white dark:bg-slate-950 ring-8 ring-slate-900/40 my-2'
+          : 'max-w-3xl mx-auto space-y-4'
+      }`}>
+        {/* Device Speaker Notch Simulator for 360/390px */}
+        {(viewportSimulation === '360px' || viewportSimulation === '390px') && (
+          <div className="w-16 h-1 bg-slate-400 dark:bg-slate-700 rounded-full mx-auto mb-2 opacity-60" />
+        )}
+
+        {/* Banner Allerta Blocco Sicurezza Cantiere D.Lgs. 81/08 se attivo */}
+        {isSimulazioneBloccoSicurezza && (
+          <div className="p-3.5 bg-rose-600/15 border-2 border-rose-500 rounded-2xl text-rose-950 dark:text-rose-100 space-y-2 animate-pulse mb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-black text-xs text-rose-600 dark:text-rose-400">
+                <ShieldAlert className="w-4 h-4 shrink-0 text-rose-500" />
+                <span>🚨 ACCESSO BLOCCATO EX D.LGS. 81/08</span>
+              </div>
+              <span className="text-[10px] font-mono font-bold bg-rose-500 text-white px-2 py-0.5 rounded">
+                Art. 41 Sospeso
+              </span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-rose-900 dark:text-rose-200">
+              <strong>Idoneità Sanitaria Scaduta:</strong> Visita medica periodica non superata o tesserino di riconoscimento privo di convalida RSPP. La timbratura e la compilazione del ROL sono <strong>inibite per legge</strong>.
+            </p>
+          </div>
+        )}
+
+        {/* Hidden file input for camera */}
+        <input
+          type="file"
+          ref={mobileFileInputRef}
+          accept="image/*"
+          capture="environment"
+          multiple
+          className="hidden"
+          onChange={handleMobilePhotoUpload}
+        />
+
+        {/* Network & Offline Status Banner */}
+        <div
+          className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border flex items-center justify-between text-xs transition-colors mb-3 ${
+            network.isOnline
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800/60 dark:text-emerald-300'
+              : 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/60 dark:border-rose-800 dark:text-rose-300 animate-pulse'
+          }`}
+        >
+          <div className="flex items-center gap-2 min-w-0 pr-2">
+            {network.isOnline ? (
+              <Wifi className="w-4 h-4 text-emerald-500 shrink-0" />
+            ) : (
+              <WifiOff className="w-4 h-4 text-rose-500 shrink-0" />
+            )}
+            <span className="truncate">
+              {network.isOnline
+                ? 'Connessione Attiva · Sincronizzazione in tempo reale'
+                : 'Dispositivo Offline · Salvataggio in cache PWA'}
+            </span>
+          </div>
+          <span className="font-mono text-[10px] font-bold uppercase tracking-wider shrink-0">
+            {network.isOnline ? 'Online' : 'Offline'}
           </span>
         </div>
-        <span className="font-mono text-[10px] font-bold uppercase tracking-wider">
-          {network.isOnline ? 'Online' : 'Offline'}
-        </span>
-      </div>
 
       {/* Operator Role Header Banner */}
       <div className="p-3 sm:p-4 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
@@ -1617,23 +1751,35 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
 
           {/* Action Buttons: Save Local Draft & Confirm ROL */}
           <div className="space-y-2 pt-2">
-            <button
-              type="submit"
-              className={`w-full ${
-                gloveMode
-                  ? 'min-h-[64px] text-base bg-amber-400 hover:bg-amber-300 text-slate-950 border-2 border-slate-950 shadow-xl ring-2 ring-amber-400/40'
-                  : 'py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/20 text-sm'
-              } active:scale-[0.99] font-black rounded-2xl transition-all flex items-center justify-center gap-2.5 cursor-pointer`}
-            >
-              <CheckCircle2 className={`${gloveMode ? 'w-6 h-6' : 'w-5 h-5'} fill-slate-950 text-amber-500`} />
-              <span>
-                {abilitaFirmaEInvioCliente
-                  ? `Conferma, Firma e Invia (${totalHours}h)`
-                  : network.isOnline
-                  ? `Salva Rapportino in Cantiere (${totalHours}h)`
-                  : `Salva al 100% Offline sul Telefono (${totalHours}h)`}
-              </span>
-            </button>
+            {isSimulazioneBloccoSicurezza ? (
+              <div className="p-4 bg-rose-950/80 border-2 border-rose-500 rounded-2xl text-center space-y-1.5 shadow-xl">
+                <div className="flex items-center justify-center gap-2 text-rose-300 font-black text-xs sm:text-sm">
+                  <Lock className="w-5 h-5 text-rose-400" />
+                  <span>INGRESSO & INVIO ROL BLOCCATI (D.Lgs. 81/08)</span>
+                </div>
+                <p className="text-[11px] text-rose-200">
+                  Operatore non abilitato per mancata idoneità medica o assenza tesserino. Usa "Sblocca Operatore" in cima per collaudare l'accesso regolare.
+                </p>
+              </div>
+            ) : (
+              <button
+                type="submit"
+                className={`w-full ${
+                  gloveMode
+                    ? 'min-h-[64px] text-base bg-amber-400 hover:bg-amber-300 text-slate-950 border-2 border-slate-950 shadow-xl ring-2 ring-amber-400/40'
+                    : 'py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/20 text-sm'
+                } active:scale-[0.99] font-black rounded-2xl transition-all flex items-center justify-center gap-2.5 cursor-pointer`}
+              >
+                <CheckCircle2 className={`${gloveMode ? 'w-6 h-6' : 'w-5 h-5'} fill-slate-950 text-amber-500`} />
+                <span>
+                  {abilitaFirmaEInvioCliente
+                    ? `Conferma, Firma e Invia (${totalHours}h)`
+                    : network.isOnline
+                    ? `Salva Rapportino in Cantiere (${totalHours}h)`
+                    : `Salva al 100% Offline sul Telefono (${totalHours}h)`}
+                </span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -1680,6 +1826,7 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
         onClose={() => setIsRichiestaModalOpen(false)}
         preselectedCantiereId={selectedCantiereId}
       />
+      </div>
     </div>
   );
 };

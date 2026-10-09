@@ -719,10 +719,11 @@ export const FatturaElettronicaModal: React.FC<FatturaElettronicaModalProps> = (
             <button
               type="button"
               onClick={handleDownloadXml}
-              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs shadow-md flex items-center gap-1.5 transition-all active:scale-95"
+              title="Scarica il file XML conforme allo standard ministeriale FatturaPA v1.8 / SDI 1.2.2"
             >
               <Download className="w-4 h-4" />
-              <span>Scarica File XML (.xml)</span>
+              <span>Scarica File XML Standard SDI 1.2.2</span>
             </button>
 
             <button
