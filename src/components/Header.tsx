@@ -21,6 +21,7 @@ import {
   LogOut,
   UserCheck,
   Award,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { AppInterfaceMode } from '../types';
@@ -452,12 +453,26 @@ export const Header: React.FC<HeaderProps> = ({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
+                    setIsProfileDropdownOpen(false);
                     onOpenOrganigramma();
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold transition-colors"
                 >
                   <Users className="w-4 h-4 text-cyan-500" />
                   <span>Vedi Organigramma (20 Dipendenti)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsProfileDropdownOpen(false);
+                    setActiveTab('impostazioni_amministrazione');
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold transition-colors"
+                >
+                  <SlidersHorizontal className="w-4 h-4 text-amber-500" />
+                  <span>Impostazioni & Anagrafica (Admin)</span>
                 </button>
 
                 <button

@@ -335,12 +335,42 @@ flowchart LR
 | **Gestione Dati Sanitari / Medico Competente** | 👁️ (RSPP) | ❌ | 👁️ (Riservato) | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Scadenziario Revisioni Mezzi & Tarature** | 👁️ | 👁️ | 👁️ | 👁️ | 👁️ / ✏️ | ❌ | ❌ | ❌ |
 | **Timbratura Presenze Rapida da Campo** | 👁️ | 👁️ | 👁️ | 👁️ / ✏️ | ❌ | ❌ | ❌ | 👁️ / ✏️ |
+| **Impostazioni Anagrafica Amministrazione (8 Tab)** | 👁️ / ✏️ / 🗑️ | 👁️ / ✏️ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Import / Export Excel (.xlsx) & CSV Anagrafiche** | 👁️ / ✏️ (Import) | 👁️ (Export) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Download Template Excel Precompilati** | 👁️ / ⬇️ | 👁️ / ⬇️ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
-*Legenda: 👁️ = Lettura | ✏️ = Creazione / Modifica | ✍️ = Firma Digitale / Visto | ❌ = Accesso Negato*
+*Legenda: 👁️ = Lettura | ✏️ = Creazione / Modifica | 🗑️ = Eliminazione Sicura | ✍️ = Firma Digitale / Visto | ⬇️ = Download | ❌ = Accesso Negato*
 
 ---
 
-## 5. SCHEMA A BLOCCHI VISIVO GENERALE DELL'INTERA PIATTAFORMA
+## 5. BLOCCO 11: IMPOSTAZIONI AMMINISTRAZIONE & ANAGRAFICA CENTRALE
+
+### 5.1 Finalità e Controllo Accessi (RBAC)
+Il modulo **Impostazioni Amministrazione** è il cuore anagrafico della piattaforma, accessibile **esclusivamente agli utenti con ruolo Amministratore o Responsabile Generale**. Se un utente con mansione operativa (capocantiere, operaio, cliente) tenta l'accesso, viene mostrato un banner di sicurezza con blocco permessi e l'invito a passare a un profilo autorizzato.
+
+### 5.2 Le 8 Sezioni Anagrafiche Gestite
+1. **Cantieri & Commesse:** Codice cantiere, titolo, cliente/committente, indirizzo e comune, date contrattuali (inizio, fine prevista, fine effettiva), budget lavori (€), direttore lavori, capocantiere, coordinate GPS (geofence), stato operativo (*in corso, in attesa, collaudo, completato, sospeso*).
+2. **Clienti:** Ragione sociale / persona fisica, P.IVA, Codice Fiscale, indirizzo sede, PEC, referente, telefono, Codice Univoco SDI per fatturazione elettronica, IBAN e condizioni di pagamento (*30/60 gg d.f. f.m.*).
+3. **Fornitori:** Ragione sociale, P.IVA, categoria merceologica (*materiale elettrico, fotovoltaico, attrezzature, veicoli, ferramenta*), referente, email ordini, giorni medi di consegna, protocollo e scadenza DURC, certificazioni (*ISO 9001, SOA*), rating di qualità fornitore.
+4. **Attrezzature:** Codice univoco, nome strumento, marca e modello, matricola/seriale, data acquisto, fornitore, stato (*disponibile, assegnata, in manutenzione, taratura scaduta*), data prossima taratura periodica (es. strumenti multifunzione CEI 64-8).
+5. **Dispositivi Aziendali & Field IT:** Codice identificativo (*DSP-TAB, DSP-TEL, DSP-GPS, DSP-DPI, DSP-TIMB*), tipologia (*tablet rugged, smartphone, GPS tracker, dpi smart con sensore caduta, terminale timbratura RFID/4G*), seriale/IMEI, assegnatario, SIM/piano dati associato, valore economico, data consegna e restituzione.
+6. **Mezzi & Flotta:** Targa, telaio, marca/modello allestimento, chilometri attuali, autista assegnato, stato operativo, scadenze ministeriali: Revisione MCTC, Polizza RCA, Bollo regionale, Tagliando chilometrico programmato.
+7. **Magazzino & Materiali:** Codice SKU, descrizione articolo, categoria merceologica, unità di misura, giacenza attuale, scorta minima con alert sottoscorta, prezzi di acquisto e listino vendita con ricarico, scaffale/corsia, codice a barre EAN/barcode.
+8. **Organico & Subappalti:**
+   - **Dipendenti interni:** Anagrafica completa, codice fiscale, reparto, mansione/qualifica contrattuale, costo orario aziendale (€/h), patentini e abilitazioni (*PES-PAV-PEI CEI 11-27, PLE, Lavori in quota, Primo Soccorso, Antincendio*), scadenza visita medica periodica D.Lgs. 81/08.
+   - **Subappalti & Ditte Terze:** Ragione sociale, P.IVA, sede, lavorazioni autorizzate, cantiere assegnato, contratto (€ e date), DURC online (*protocollo, scadenza, conformità INPS/INAIL/CNCE*), POS (*approvato CSE, in revisione, da presentare*), numero operai in cantiere, attestazione di congruità della manodopera (*D.M. 143/2021*).
+
+### 5.3 Funzionalità Trasversali di Import / Export
+- **Ricerca Full-Text e Filtri:** Ricerca immediata su codice, ragione sociale, targa, matricola, referente e filtri stato.
+- **Creazione e Modifica Guidata:** Form modali specifici per ciascuna anagrafica con validazione campi obbligatori.
+- **Eliminazione Sicura:** Modale di conferma ad alto livello di sicurezza con riepilogo del record per prevenire cancellazioni accidentali.
+- **Export in Excel (.xlsx) e CSV:** Generazione immediata con un clic del foglio di calcolo formattato.
+- **Import da Excel / CSV:** Drag-and-drop con parser intelligente (`anagraficaExcelService`), auto-mappatura intestazioni italiane/inglesi, rilevamento duplicati, report KPI (*Letti, Nuovi Inseriti, Aggiornati, Errori*) e visualizzazione dettaglio errori riga per riga.
+- **Template Excel di Esempio:** Generazione al volo di file `.xlsx` puliti contenenti le colonne raccomandate e 2 righe di esempio esplicative pronte da compilare.
+
+---
+
+## 6. SCHEMA A BLOCCHI VISIVO GENERALE DELL'INTERA PIATTAFORMA
 
 ```mermaid
 graph TB
@@ -352,6 +382,7 @@ graph TB
     end
 
     subgraph CORE_MODULES["MODULI FUNZIONALI APPLICATIVI"]
+        ADMIN_SETTINGS["⚙️ Impostazioni Amministrazione (8 Tab)<br/>Cantieri, Clienti, Fornitori, Asset, Magazzino, HR"]
         DASH_CANTIERE["🏗️ Dashboard Cantiere 360°<br/>Materiali, Mezzi, Foto, KPI"]
         ORDINI["📦 Sezione Ordini<br/>Fornitori & Clienti / Interni"]
         LOGISTICA["🚚 Portale Logistica<br/>Flotta, Mezzi, Attrezzature"]
@@ -364,17 +395,29 @@ graph TB
         PREVIEW["👁️ File Previewer Universale<br/>Ispezione PDF/Foto Senza Download"]
     end
 
+    subgraph EXCEL_ENGINE["EXCEL & DATA IMPORT/EXPORT ENGINE"]
+        PARSER["📥 Drag & Drop XLSX/CSV Parser<br/>Auto-mapping & Validation Report"]
+        TEMPLATE_GEN["📄 Dynamic Template Generator<br/>Download Modelli con Esempi"]
+        EXPORTER["📤 Excel & CSV Exporter<br/>XLSX Formattato con un Clic"]
+    end
+
     subgraph DATA_LAYER["DATA LAYER & SINCRONIZZAZIONE PERSISTENTE"]
-        FS_DB[("🔥 Cloud Firebase Firestore<br/>cantieri, rols, sals, ddts, ordini")]
+        FS_DB[("🔥 Cloud Firebase Firestore<br/>cantieri, clienti, fornitori, asset, rols")]
         LOCAL_CACHE[("💾 Local IndexedDB Cache<br/>PWA Service Worker Engine")]
         SYNC_ENGINE["🔄 Sync Manager Bidirezionale<br/>Auto-reconnect & Queue Offline"]
     end
 
+    DESK --> ADMIN_SETTINGS
     DESK --> DASH_CANTIERE
     DESK --> ORDINI
     DESK --> SAL
     DESK --> SICUREZZA
     DESK --> GANTT
+
+    ADMIN_SETTINGS <--> EXCEL_ENGINE
+    EXCEL_ENGINE <--> PARSER
+    EXCEL_ENGINE <--> TEMPLATE_GEN
+    EXCEL_ENGINE <--> EXPORTER
 
     MOBILE --> ROL
     MOBILE --> GIORNALE
@@ -394,4 +437,4 @@ graph TB
 ```
 
 ---
-*Fine Documento Ufficiale - SCHEMI_A_BLOCCHI_RUOLI_E_WORKFLOW v4.0*
+*Fine Documento Ufficiale - SCHEMI_A_BLOCCHI_RUOLI_E_WORKFLOW v5.0*

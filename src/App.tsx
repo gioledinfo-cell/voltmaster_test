@@ -47,6 +47,7 @@ import { SicurezzaCantierePanel } from './components/sicurezza/SicurezzaCantiere
 import { GanttSquadreModule } from './components/gantt/GanttSquadreModule';
 import { GiornaleLavoriModule } from './components/GiornaleLavoriModule';
 import { FatturaElettronicaModal } from './components/fatturazione/FatturaElettronicaModal';
+import { ImpostazioniAmministrazioneModule } from './components/amministrazione/ImpostazioniAmministrazioneModule';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { CheckCircle2, AlertTriangle, Info, XCircle, X } from 'lucide-react';
@@ -176,6 +177,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ forcedTab }) => {
                 {activeTab === 'organigramma' && (
                   <DipendentiModule onOpenOrganigramma={() => setIsOrganigrammaOpen(true)} />
                 )}
+                {activeTab === 'impostazioni_amministrazione' && <ImpostazioniAmministrazioneModule />}
               </>
             )}
           </ErrorBoundary>

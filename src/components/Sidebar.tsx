@@ -37,6 +37,7 @@ import {
   Calendar,
   FileCode,
   FileCheck,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useApp, NavigationTab } from '../context/AppContext';
 import { usePowerApps } from '../context/PowerAppsContext';
@@ -433,6 +434,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             keywords: 'cliente portale committente visualizzazione report avanzamento verbali',
             icon: UserCircle2,
             modes: ['cliente_portal', 'ufficio_tecnico'],
+          },
+          {
+            tab: 'impostazioni_amministrazione',
+            label: 'Impostazioni & Anagrafica',
+            keywords: 'impostazioni amministrazione anagrafica cantieri clienti fornitori attrezzature dispositivi mezzi magazzino operai subappalti excel import export template',
+            icon: SlidersHorizontal,
+            badge: 'Admin',
+            badgeColor: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold font-mono',
+            modes: ['ufficio_tecnico', 'contabilita', 'cantiere_mobile', 'magazzino_portale'],
           },
         ],
       },

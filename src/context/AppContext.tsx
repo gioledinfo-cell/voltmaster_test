@@ -62,6 +62,9 @@ import { CANTIERI } from '../data/cantieri';
 import { RIFORNIMENTI } from '../data/rifornimenti';
 import { DepositoRecord, RifornimentoRecord } from '../types/gestioneOperativa';
 import { ArticoloListinoFornitore, LISTINO_REMATARLAZZI } from '../data/listinoFornitore';
+import { DispositivoAziendale, SubappaltoAnagrafica } from '../types/anagrafica';
+import { INITIAL_DISPOSITIVI_AZIENDALI } from '../data/mockDispositiviAziendali';
+import { INITIAL_SUBAPPALTI } from '../data/mockSubappalti';
 import {
   saveActiveDataToOfflineCache,
   getOfflineCacheMetadataSync,
@@ -105,7 +108,8 @@ export type NavigationTab =
   | 'sicurezza_cantiere'
   | 'gantt_squadre'
   | 'giornale_lavori'
-  | 'fatturazione_elettronica';
+  | 'fatturazione_elettronica'
+  | 'impostazioni_amministrazione';
 
 export interface Toast {
   id: string;
@@ -151,8 +155,10 @@ interface AppContextType {
   // Mutators
   addCliente: (c: Omit<Cliente, 'id'>) => Cliente;
   updateCliente: (id: string, updates: Partial<Cliente>) => void;
+  deleteCliente: (id: string) => void;
   addCantiere: (c: Omit<Cantiere, 'id'>) => Cantiere;
   updateCantiere: (id: string, updates: Partial<Cantiere>) => void;
+  deleteCantiere: (id: string) => void;
   
   addPreventivo: (p: Omit<Preventivo, 'id'>) => Preventivo;
   updatePreventivo: (id: string, updates: Partial<Preventivo>) => void;
@@ -169,16 +175,35 @@ interface AppContextType {
   addArticoloMagazzino: (a: Omit<ArticoloMagazzino, 'id'> & { id?: string }) => ArticoloMagazzino;
   addArticoliMagazzinoBatch: (articoli: (Omit<ArticoloMagazzino, 'id'> & { id?: string })[]) => number;
   updateArticoloMagazzino: (id: string, updates: Partial<ArticoloMagazzino>) => void;
+  deleteArticoloMagazzino: (id: string) => void;
   addMovimento: (m: Omit<MovimentoMagazzino, 'id'>) => void;
 
   addAttrezzatura: (a: Omit<Attrezzatura, 'id'>) => Attrezzatura;
   updateAttrezzatura: (id: string, updates: Partial<Attrezzatura>) => void;
+  deleteAttrezzatura: (id: string) => void;
 
   updateVeicolo: (id: string, updates: Partial<Veicolo>) => void;
   addVeicolo: (v: Omit<Veicolo, 'id'>) => Veicolo;
+  deleteVeicolo: (id: string) => void;
   setVeicoliList: (list: Veicolo[]) => void;
   addRifornimento: (r: Omit<RifornimentoRecord, 'id'>) => RifornimentoRecord;
   addDeposito: (dep: Omit<DepositoRecord, 'id'>) => DepositoRecord;
+
+  addDipendente: (d: Omit<Dipendente, 'id'>) => Dipendente;
+  updateDipendente: (id: string, updates: Partial<Dipendente>) => void;
+  deleteDipendente: (id: string) => void;
+
+  // Dispositivi Aziendali & Field IT
+  dispositiviAziendali: DispositivoAziendale[];
+  addDispositivoAziendale: (d: Omit<DispositivoAziendale, 'id'>) => DispositivoAziendale;
+  updateDispositivoAziendale: (id: string, updates: Partial<DispositivoAziendale>) => void;
+  deleteDispositivoAziendale: (id: string) => void;
+
+  // Subappalti & Ditte Terze
+  subappalti: SubappaltoAnagrafica[];
+  addSubappalto: (s: Omit<SubappaltoAnagrafica, 'id'>) => SubappaltoAnagrafica;
+  updateSubappalto: (id: string, updates: Partial<SubappaltoAnagrafica>) => void;
+  deleteSubappalto: (id: string) => void;
 
   addDocumento: (doc: Omit<DocumentoTecnico, 'id'>) => DocumentoTecnico;
   addSegnalazione: (seg: Omit<SegnalazioneCliente, 'id'>) => SegnalazioneCliente;
@@ -187,6 +212,9 @@ interface AppContextType {
   // Ordini Interni & Fornitori
   ordiniInterni: OrdineInterno[];
   fornitori: FornitoreAnagrafica[];
+  addFornitore: (f: Omit<FornitoreAnagrafica, 'id'>) => FornitoreAnagrafica;
+  updateFornitore: (id: string, updates: Partial<FornitoreAnagrafica>) => void;
+  deleteFornitore: (id: string) => void;
   addOrdineInterno: (ordine: Omit<OrdineInterno, 'id' | 'numero' | 'storicoStati' | 'creatoDa'>) => OrdineInterno;
   updateOrdineInterno: (id: string, updates: Partial<OrdineInterno>) => void;
   deleteOrdineInterno: (id: string) => void;
@@ -420,6 +448,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [pacchiZonaVerde, setPacchiZonaVerde] = useState<PaccoZonaVerde[]>(() =>
     loadFromStorage('pacchi_zona_verde_v1', MOCK_PACCHI_ZONA_VERDE)
   );
+  const [dispositiviAziendali, setDispositiviAziendali] = useState<DispositivoAziendale[]>(() =>
+    loadFromStorage('dispositivi_aziendali_v1', INITIAL_DISPOSITIVI_AZIENDALI)
+  );
+  const [subappalti, setSubappalti] = useState<SubappaltoAnagrafica[]>(() =>
+    loadFromStorage('subappalti_anagrafica_v1', INITIAL_SUBAPPALTI)
+  );
   const [activePaccoCaricoModal, setActivePaccoCaricoModal] = useState<PaccoZonaVerde | null>(null);
   const [selectedPaccoStampa, setSelectedPaccoStampa] = useState<PaccoZonaVerde | null>(null);
   const [isNuovoPaccoModalOpen, setIsNuovoPaccoModalOpen] = useState(false);
@@ -543,11 +577,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveToStorageSafe('ddts', ddts);
       saveToStorageSafe('richieste_materiali_v1', richiesteMateriali);
       saveToStorageSafe('pacchi_zona_verde_v1', pacchiZonaVerde);
+      saveToStorageSafe('dispositivi_aziendali_v1', dispositiviAziendali);
+      saveToStorageSafe('subappalti_anagrafica_v1', subappalti);
       saveToStorageSafe('current_user', currentUser);
     } catch (e) {
       console.error('Storage save error:', e);
     }
-  }, [clienti, cantieri, preventivi, lavorazioni, rols, dipendenti, magazzino, movimenti, attrezzature, veicoli, depositi, rifornimenti, documenti, segnalazioni, ordiniInterni, fornitori, presenze, sals, scadenze, notifiche, ddts, richiesteMateriali, pacchiZonaVerde, currentUser]);
+  }, [clienti, cantieri, preventivi, lavorazioni, rols, dipendenti, magazzino, movimenti, attrezzature, veicoli, depositi, rifornimenti, documenti, segnalazioni, ordiniInterni, fornitori, presenze, sals, scadenze, notifiche, ddts, richiesteMateriali, pacchiZonaVerde, dispositiviAziendali, subappalti, currentUser]);
 
   const showToast = (message: string, type: 'success' | 'warning' | 'error' | 'info' = 'success') => {
     const id = Date.now().toString() + Math.random().toString(36).substring(2, 6);
@@ -630,6 +666,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('Anagrafica cliente aggiornata.', 'info');
   };
 
+  const deleteCliente = (id: string) => {
+    setClienti((prev) => prev.filter((c) => c.id !== id));
+    showToast('Cliente rimosso dall\'archivio.', 'info');
+  };
+
   const addCantiere = (data: Omit<Cantiere, 'id'>) => {
     const newId = generateUniqueId('cnt');
     const newCantiere: Cantiere = { ...data, id: newId };
@@ -643,6 +684,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map((c) => (c.id === id ? { ...c, ...updates } : c))
     );
     showToast('Cantiere aggiornato.');
+  };
+
+  const deleteCantiere = (id: string) => {
+    setCantieri((prev) => prev.filter((c) => c.id !== id));
+    showToast('Cantiere eliminato con successo.', 'info');
   };
 
   const addPreventivo = (data: Omit<Preventivo, 'id'>) => {
@@ -892,6 +938,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('Giacenza/Articolo aggiornato.');
   };
 
+  const deleteArticoloMagazzino = (id: string) => {
+    setMagazzino((prev) => prev.filter((a) => a.id !== id));
+    showToast('Articolo rimosso dal magazzino.', 'info');
+  };
+
   const addMovimento = (m: Omit<MovimentoMagazzino, 'id'>) => {
     const newMov: MovimentoMagazzino = {
       ...m,
@@ -926,6 +977,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('Attrezzatura aggiornata.');
   };
 
+  const deleteAttrezzatura = (id: string) => {
+    setAttrezzature((prev) => prev.filter((a) => a.id !== id));
+    showToast('Attrezzatura eliminata.', 'info');
+  };
+
   const addVeicolo = (data: Omit<Veicolo, 'id'>) => {
     const newId = generateUniqueId('vec');
     const newVec: Veicolo = { ...data, id: newId };
@@ -939,6 +995,83 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map((v) => (v.id === id ? { ...v, ...updates } : v))
     );
     showToast('Dati veicolo aggiornati.');
+  };
+
+  const deleteVeicolo = (id: string) => {
+    setVeicoli((prev) => prev.filter((v) => v.id !== id));
+    showToast('Veicolo rimosso dal parco mezzi.', 'info');
+  };
+
+  const addDipendente = (data: Omit<Dipendente, 'id'>) => {
+    const newId = generateUniqueId('dip');
+    const newDip: Dipendente = { ...data, id: newId };
+    setDipendenti((prev) => [newDip, ...prev]);
+    showToast(`Dipendente ${newDip.nome} ${newDip.cognome} aggiunto all'organico!`, 'success');
+    return newDip;
+  };
+
+  const updateDipendente = (id: string, updates: Partial<Dipendente>) => {
+    setDipendenti((prev) => prev.map((d) => (d.id === id ? { ...d, ...updates } : d)));
+    showToast('Scheda dipendente aggiornata.', 'info');
+  };
+
+  const deleteDipendente = (id: string) => {
+    setDipendenti((prev) => prev.filter((d) => d.id !== id));
+    showToast('Dipendente rimosso dall\'organico aziendale.', 'info');
+  };
+
+  const addFornitore = (data: Omit<FornitoreAnagrafica, 'id'>) => {
+    const newId = generateUniqueId('forn');
+    const newForn: FornitoreAnagrafica = { ...data, id: newId };
+    setFornitori((prev) => [newForn, ...prev]);
+    showToast(`Fornitore ${newForn.ragioneSociale} registrato!`, 'success');
+    return newForn;
+  };
+
+  const updateFornitore = (id: string, updates: Partial<FornitoreAnagrafica>) => {
+    setFornitori((prev) => prev.map((f) => (f.id === id ? { ...f, ...updates } : f)));
+    showToast('Anagrafica fornitore aggiornata.', 'info');
+  };
+
+  const deleteFornitore = (id: string) => {
+    setFornitori((prev) => prev.filter((f) => f.id !== id));
+    showToast('Fornitore rimosso dall\'elenco.', 'info');
+  };
+
+  const addDispositivoAziendale = (data: Omit<DispositivoAziendale, 'id'>) => {
+    const newId = generateUniqueId('dsp');
+    const newDsp: DispositivoAziendale = { ...data, id: newId };
+    setDispositiviAziendali((prev) => [newDsp, ...prev]);
+    showToast(`Dispositivo ${newDsp.codice} registrato con successo!`, 'success');
+    return newDsp;
+  };
+
+  const updateDispositivoAziendale = (id: string, updates: Partial<DispositivoAziendale>) => {
+    setDispositiviAziendali((prev) => prev.map((d) => (d.id === id ? { ...d, ...updates } : d)));
+    showToast('Scheda dispositivo aggiornata.', 'info');
+  };
+
+  const deleteDispositivoAziendale = (id: string) => {
+    setDispositiviAziendali((prev) => prev.filter((d) => d.id !== id));
+    showToast('Dispositivo eliminato dall\'inventario.', 'info');
+  };
+
+  const addSubappalto = (data: Omit<SubappaltoAnagrafica, 'id'>) => {
+    const newId = generateUniqueId('sub');
+    const newSub: SubappaltoAnagrafica = { ...data, id: newId };
+    setSubappalti((prev) => [newSub, ...prev]);
+    showToast(`Impresa in subappalto ${newSub.ragioneSociale} registrata!`, 'success');
+    return newSub;
+  };
+
+  const updateSubappalto = (id: string, updates: Partial<SubappaltoAnagrafica>) => {
+    setSubappalti((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+    showToast('Scheda subappalto aggiornata.', 'info');
+  };
+
+  const deleteSubappalto = (id: string) => {
+    setSubappalti((prev) => prev.filter((s) => s.id !== id));
+    showToast('Subappalto rimosso dall\'archivio.', 'info');
   };
 
   const setVeicoliList = (list: Veicolo[]) => {
@@ -2274,8 +2407,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         notifiche,
         addCantiere,
         updateCantiere,
+        deleteCantiere,
         addCliente,
         updateCliente,
+        deleteCliente,
         addPreventivo,
         updatePreventivo,
         convertPreventivoToCantiere,
@@ -2288,12 +2423,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addArticoloMagazzino,
         addArticoliMagazzinoBatch,
         updateArticoloMagazzino,
+        deleteArticoloMagazzino,
         addMovimento,
         addAttrezzatura,
         updateAttrezzatura,
+        deleteAttrezzatura,
         addVeicolo,
         updateVeicolo,
+        deleteVeicolo,
         setVeicoliList,
+        addDipendente,
+        updateDipendente,
+        deleteDipendente,
+        addFornitore,
+        updateFornitore,
+        deleteFornitore,
+        dispositiviAziendali,
+        addDispositivoAziendale,
+        updateDispositivoAziendale,
+        deleteDispositivoAziendale,
+        subappalti,
+        addSubappalto,
+        updateSubappalto,
+        deleteSubappalto,
         addRifornimento,
         addDocumento,
         addSegnalazione,
