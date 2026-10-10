@@ -26,6 +26,7 @@ import {
   Command,
 } from 'lucide-react';
 import { useApp, NavigationTab } from '../../context/AppContext';
+import { isItemVisible, AccessControlRule } from '../../utils/accessControl';
 
 interface CommandPaletteModalProps {
   isOpen: boolean;
@@ -34,7 +35,7 @@ interface CommandPaletteModalProps {
   onOpenFlussoCantiere?: () => void;
 }
 
-interface CommandItem {
+interface CommandItem extends AccessControlRule {
   id: string;
   category: 'Cantiere & Operazioni' | 'Logistica & Flotta' | 'Contabilità & SAL' | 'Sicurezza & Compliance' | 'Azioni Rapide';
   title: string;
@@ -52,7 +53,17 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   onOpenOrganigramma,
   onOpenFlussoCantiere,
 }) => {
-  const { setActiveTab, cantieri, magazzino, ddts, ordiniInterni, scadenze, rols } = useApp();
+  const {
+    setActiveTab,
+    cantieri,
+    magazzino,
+    ddts,
+    ordiniInterni,
+    scadenze,
+    rols,
+    currentUser,
+    interfaceMode,
+  } = useApp();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -274,17 +285,29 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     return list;
   }, [cantieri, magazzino, ddts, ordiniInterni, scadenze, rols, onOpenFlussoCantiere, onOpenOrganigramma]);
 
+  // Filtra le voci accessibili in base a ruolo e reparto (RBAC)
+  const allowedCommands = useMemo(() => {
+    return items.filter((item) => {
+      const rule: AccessControlRule = {
+        allowedRoles: item.allowedRoles,
+        allowedReparti: item.allowedReparti,
+        modes: item.modes,
+      };
+      return isItemVisible(rule, currentUser, interfaceMode);
+    });
+  }, [items, currentUser, interfaceMode]);
+
   // Filtraggio live
   const filteredCommands = useMemo(() => {
-    if (!query.trim()) return items.slice(0, 12);
+    if (!query.trim()) return allowedCommands.slice(0, 12);
     const q = query.toLowerCase().trim();
-    return items.filter(
+    return allowedCommands.filter(
       (item) =>
         item.title.toLowerCase().includes(q) ||
         (item.subtitle && item.subtitle.toLowerCase().includes(q)) ||
         item.keywords.toLowerCase().includes(q)
     );
-  }, [items, query]);
+  }, [allowedCommands, query]);
 
   if (!isOpen) return null;
 

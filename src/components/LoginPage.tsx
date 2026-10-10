@@ -99,7 +99,7 @@ export const LoginPage: React.FC = () => {
       desc: 'Compilazione orario giornaliero e segnalazione materiali',
     },
     {
-      user: INITIAL_USERS[5], // Laura Valenti
+      user: INITIAL_USERS.find((u) => u.role === 'cliente') || INITIAL_USERS[7], // Laura Valenti
       title: 'Cliente Committente',
       roleTag: 'GreenTech Logistics S.p.A.',
       badgeColor: 'bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border-indigo-500/30',

@@ -1,0 +1,1 @@
+export const N_REGISTRI_ANAGRAFICHE = 8;

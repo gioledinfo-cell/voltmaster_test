@@ -7,7 +7,8 @@ export type CompanyDepartment =
   | 'ufficio_tecnico'   // 4 persone: Ufficio Tecnico & PM
   | 'capocantiere'      // 4 persone: Capi Cantiere / Op. Specializzati
   | 'operaio'           // 4 persone: Operai Elettricisti
-  | 'apprendista';      // 5 persone: Apprendisti
+  | 'apprendista'       // 5 persone: Apprendisti
+  | 'hr';               // Risorse Umane, Formazione & Compliance
 
 export type AppInterfaceMode = 
   | 'contabilita'       // Vista Amministrazione & Contabilità (3 dipendenti)

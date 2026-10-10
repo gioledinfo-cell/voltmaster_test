@@ -102,13 +102,9 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
     addROL,
     showToast,
     setActiveTab,
-    offlineCacheInfo,
-    openOfflineModal,
-    refreshOfflineCache,
   } = useApp();
 
   const network = useNetworkStatus();
-  const [isRefreshingCache, setIsRefreshingCache] = useState(false);
   const mobileFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const isCapocantiere = currentUser.reparto === 'capocantiere' || currentUser.role === 'amministratore' || currentUser.role === 'responsabile';
@@ -176,7 +172,10 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
   const [isSimulazioneBloccoSicurezza, setIsSimulazioneBloccoSicurezza] = useState<boolean>(false);
 
   // Esegui geofencing GPS (reale o simulato per test)
-  const runGpsGeofencing = async (customCoords?: { latitude: number; longitude: number; label?: string }) => {
+  const runGpsGeofencing = async (
+    customCoords?: { latitude: number; longitude: number; label?: string },
+    isUserInitiated: boolean = false
+  ) => {
     setIsLocatingGps(true);
     setGpsError(null);
 
@@ -207,11 +206,13 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
         navigator.vibrate([30, 50, 30]);
       }
-      showToast(
-        `📍 Cantiere "${result.matchedCantiere.titolo}" (${result.matchInfo?.distanceFormatted}) rilevato via GPS! Commessa pre-selezionata automaticamente (0 click).`,
-        'success'
-      );
-    } else if (result.closestCantiere) {
+      if (isUserInitiated) {
+        showToast(
+          `📍 Cantiere "${result.matchedCantiere.titolo}" (${result.matchInfo?.distanceFormatted}) rilevato via GPS! Commessa pre-selezionata automaticamente (0 click).`,
+          'success'
+        );
+      }
+    } else if (result.closestCantiere && isUserInitiated) {
       showToast(
         `📡 Posizione GPS acquisita. Nessun cantiere entro 500m (più vicino: ${result.closestCantiere.cantiere.titolo} a ${result.closestCantiere.distanceFormatted}).`,
         'info'
@@ -219,10 +220,10 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
     }
   };
 
-  // Esegui geofencing automatico all'apertura del terminale di campo
+  // Esegui geofencing automatico all'apertura del terminale di campo (silente su mount)
   useEffect(() => {
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
-      runGpsGeofencing();
+      runGpsGeofencing(undefined, false);
     }
   }, []);
 
@@ -234,18 +235,21 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
     }
   }, []);
 
-  // Save glove mode preference
+  // Save glove mode preference (impure side-effect showToast outside of state updater)
   const toggleGloveMode = () => {
-    setGloveMode((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('voltmaster_glove_mode', String(next));
-      } catch {
-        // Ignore
-      }
-      showToast(next ? '🧤 Modalità Guanti Cantiere Attivata (Pulsanti maggiorati & alto contrasto)' : 'Modalità Standard ripristinata', 'info');
-      return next;
-    });
+    const next = !gloveMode;
+    setGloveMode(next);
+    try {
+      localStorage.setItem('voltmaster_glove_mode', String(next));
+    } catch {
+      // Ignore
+    }
+    showToast(
+      next
+        ? '🧤 Modalità Guanti Cantiere Attivata (Pulsanti maggiorati & alto contrasto)'
+        : 'Modalità Standard ripristinata',
+      'info'
+    );
   };
 
   // Restore draft handler
@@ -1030,7 +1034,7 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => runGpsGeofencing()}
+                  onClick={() => runGpsGeofencing(undefined, true)}
                   disabled={isLocatingGps}
                   className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-amber-400 text-slate-700 dark:text-slate-300 text-[11px] font-medium rounded-lg flex items-center gap-1 transition-all active:scale-95 disabled:opacity-50"
                   title="Rileva coordinate GPS dal browser"
@@ -1119,7 +1123,10 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
                       key={sim.id}
                       type="button"
                       onClick={() => {
-                        runGpsGeofencing({ latitude: sim.latitude, longitude: sim.longitude, label: sim.label });
+                        runGpsGeofencing(
+                          { latitude: sim.latitude, longitude: sim.longitude, label: sim.label },
+                          true
+                        );
                         setShowSimulatedPicker(false);
                       }}
                       className="p-1.5 text-left bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-400 rounded text-[11px] transition-colors"
@@ -1701,11 +1708,11 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
               <button
                 type="button"
                 onClick={() => {
-                  setAbilitaFirmaEInvioCliente((prev) => {
-                    const nextVal = !prev;
-                    if (!nextVal) setSignatureData(null);
-                    return nextVal;
-                  });
+                  const nextVal = !abilitaFirmaEInvioCliente;
+                  setAbilitaFirmaEInvioCliente(nextVal);
+                  if (!nextVal) {
+                    setSignatureData(null);
+                  }
                 }}
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                   abilitaFirmaEInvioCliente ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-800'
@@ -1799,8 +1806,8 @@ export const CampoMobileView: React.FC<CampoMobileViewProps> = ({ onOpenFlussoCa
       {/* Signature Modal */}
       {isSigning && (
         <SignatureModal
-          cantiereTitolo={currentCantiere.titolo}
-          clienteNome={currentCantiere.clienteNome}
+          cantiereTitolo={currentCantiere?.titolo || 'Cantiere'}
+          clienteNome={currentCantiere?.clienteNome || 'Cliente'}
           rolNumero="ROL-BOZZA-CAMPO"
           onClose={() => setIsSigning(false)}
           onSaveSignature={(dataUrl: string, signerName: string, timestamp: string) => {
